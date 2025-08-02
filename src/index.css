@@ -17,8 +17,9 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 222.2 47.4% 11.2%;
+    --primary: 220 89% 48%;
     --primary-foreground: 210 40% 98%;
+    --primary-glow: 220 89% 65%;
 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -26,15 +27,33 @@ All colors MUST be HSL.
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 147 51% 47%;
+    --accent-foreground: 210 40% 98%;
+
+    --warning: 25 95% 53%;
+    --warning-foreground: 210 40% 98%;
+
+    --success: 147 51% 47%;
+    --success-foreground: 210 40% 98%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --ring: 220 89% 48%;
+
+    /* Professional gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(220 89% 48%), hsl(220 89% 65%));
+    --gradient-hero: linear-gradient(135deg, hsl(220 89% 48%), hsl(147 51% 47%));
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(210 40% 98%));
+
+    /* Professional shadows */
+    --shadow-elegant: 0 10px 30px -10px hsl(220 89% 48% / 0.2);
+    --shadow-soft: 0 4px 20px -4px hsl(220 89% 48% / 0.1);
+
+    /* Smooth transitions */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
     --radius: 0.5rem;
 
