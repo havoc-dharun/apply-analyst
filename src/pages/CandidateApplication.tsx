@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Upload, FileText, Send, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { analyzeResumeWithGemini, extractTextFromFile } from "@/lib/gemini";
 
 const CandidateApplication = () => {
   const { jobId } = useParams();
@@ -45,22 +46,7 @@ const CandidateApplication = () => {
   };
 
   const processResumeWithAI = async (resumeText: string, jobDescription: string) => {
-    // Simulate AI processing for demo purposes
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    const mockAIResponse = {
-      matchScore: Math.floor(Math.random() * 40) + 60, // 60-100
-      matchedSkills: [
-        "JavaScript", "React", "Team Leadership", "Problem Solving", "Communication"
-      ],
-      missingSkills: [
-        "Docker", "Kubernetes", "AWS Certification"
-      ],
-      summary: "Strong candidate with relevant experience in frontend development and team leadership. Shows good technical skills but lacks some cloud infrastructure experience.",
-      recommendation: Math.random() > 0.3 ? "Shortlist for Next Round" : "Consider with Caution"
-    };
-
-    return mockAIResponse;
+    return await analyzeResumeWithGemini(resumeText, jobDescription);
   };
 
   const handleSubmit = async () => {
@@ -76,8 +62,8 @@ const CandidateApplication = () => {
     setIsSubmitting(true);
 
     try {
-      // Simulate resume text extraction
-      const resumeText = `Sample resume content for ${applicationData.name}`;
+      // Extract resume text from uploaded file
+      const resumeText = await extractTextFromFile(applicationData.resume);
       
       // Process with AI
       const aiResult = await processResumeWithAI(resumeText, jobData?.description || "");

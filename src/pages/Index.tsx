@@ -2,21 +2,23 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Briefcase, Users, Zap, ArrowRight, Brain, FileSearch, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { ModernNavigation } from "@/components/ModernNavigation";
 
 const Index = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gradient-card">
+    <div className="min-h-screen bg-background">
+      <ModernNavigation />
       {/* Hero Section */}
       <div className="bg-gradient-hero text-primary-foreground py-20">
         <div className="container mx-auto px-4 text-center">
           <div className="flex items-center justify-center gap-3 mb-6">
             <Brain className="w-12 h-12" />
-            <h1 className="text-5xl font-bold">HR Assistant</h1>
+            <h1 className="text-5xl font-bold">The Future of Smart Recruitment Technology is here.</h1>
           </div>
           <p className="text-xl text-primary-foreground/90 mb-8 max-w-2xl mx-auto">
-            AI-Powered Resume Evaluation System that automatically scores candidates and ranks them by job fit
+            We integrate AI-powered resume analysis into your hiring process, automatically evaluating candidates with precision and speed.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
