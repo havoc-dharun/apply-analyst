@@ -76,13 +76,20 @@ const CandidateApplication = () => {
     setIsSubmitting(true);
 
     try {
+      console.log("Starting application submission...");
+      
       // Extract resume text from uploaded file
+      console.log("Extracting text from file...");
       const resumeText = await extractTextFromFile(applicationData.resume);
+      console.log("Resume text extracted:", resumeText.substring(0, 100) + "...");
       
       // Process with AI
+      console.log("Analyzing with Gemini API...");
       const aiResult = await processResumeWithAI(resumeText, jobData?.description || "");
+      console.log("AI analysis complete:", aiResult);
 
       // Store application in database
+      console.log("Saving to database...");
       const { data, error } = await supabase
         .from('applications')
         .insert({
@@ -96,7 +103,12 @@ const CandidateApplication = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Database error:", error);
+        throw error;
+      }
+
+      console.log("Application saved successfully:", data);
 
       toast({
         title: "Application Submitted Successfully!",
@@ -108,10 +120,10 @@ const CandidateApplication = () => {
       setApplicationData({ name: "", email: "", resume: null });
       
     } catch (error) {
-      console.error('Error submitting application:', error);
+      console.error('Detailed error submitting application:', error);
       toast({
         title: "Submission Failed",
-        description: "There was an error processing your application. Please try again.",
+        description: `Error: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`,
         variant: "destructive"
       });
     } finally {
