@@ -20,21 +20,22 @@ import {
   Eye,
   Download
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Application {
   id: string;
-  jobId: string;
+  job_id: string;
   name: string;
   email: string;
-  resumeFileName: string;
-  aiAnalysis: {
+  resume_file_name: string;
+  ai_analysis: {
     matchScore: number;
     matchedSkills: string[];
     missingSkills: string[];
     summary: string;
     recommendation: string;
   };
-  submittedAt: string;
+  submitted_at: string;
 }
 
 const ApplicationResults = () => {
@@ -44,19 +45,37 @@ const ApplicationResults = () => {
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
 
   useEffect(() => {
-    if (jobId) {
+    loadJobAndApplications();
+  }, [jobId]);
+
+  const loadJobAndApplications = async () => {
+    if (!jobId) return;
+
+    try {
       // Load job data
-      const storedJob = localStorage.getItem(`job_${jobId}`);
-      if (storedJob) {
-        setJobData(JSON.parse(storedJob));
-      }
+      const { data: jobData, error: jobError } = await supabase
+        .from('jobs')
+        .select('*')
+        .eq('id', jobId)
+        .single();
+
+      if (jobError) throw jobError;
+      setJobData(jobData);
 
       // Load applications for this job
-      const allApplications = JSON.parse(localStorage.getItem("applications") || "[]");
-      const jobApplications = allApplications.filter((app: Application) => app.jobId === jobId);
-      setApplications(jobApplications);
+      const { data: applicationsData, error: applicationsError } = await supabase
+        .from('applications')
+        .select('*')
+        .eq('job_id', jobId);
+
+      if (applicationsError) throw applicationsError;
+      setApplications((applicationsData || []) as any);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      setJobData(null);
+      setApplications([]);
     }
-  }, [jobId]);
+  };
 
   const getStatusIcon = (recommendation: string) => {
     switch (recommendation) {
@@ -81,10 +100,10 @@ const ApplicationResults = () => {
   };
 
   const averageScore = applications.length > 0 
-    ? Math.round(applications.reduce((sum, app) => sum + app.aiAnalysis.matchScore, 0) / applications.length)
+    ? Math.round(applications.reduce((sum, app) => sum + app.ai_analysis.matchScore, 0) / applications.length)
     : 0;
 
-  const shortlistedCount = applications.filter(app => app.aiAnalysis.recommendation === "Shortlist for Next Round").length;
+  const shortlistedCount = applications.filter(app => app.ai_analysis.recommendation === "Shortlist for Next Round").length;
 
   if (!jobData) {
     return (
@@ -175,7 +194,7 @@ const ApplicationResults = () => {
                     </TableHeader>
                     <TableBody>
                       {applications
-                        .sort((a, b) => b.aiAnalysis.matchScore - a.aiAnalysis.matchScore)
+                        .sort((a, b) => (b.ai_analysis as any).matchScore - (a.ai_analysis as any).matchScore)
                         .map((app) => (
                           <TableRow key={app.id}>
                             <TableCell>
@@ -186,17 +205,17 @@ const ApplicationResults = () => {
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
-                                <span className="font-semibold">{app.aiAnalysis.matchScore}%</span>
+                                <span className="font-semibold">{(app.ai_analysis as any).matchScore}%</span>
                                 <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
                                   <div 
                                     className="h-full bg-primary transition-all"
-                                    style={{ width: `${app.aiAnalysis.matchScore}%` }}
+                                    style={{ width: `${(app.ai_analysis as any).matchScore}%` }}
                                   />
                                 </div>
                               </div>
                             </TableCell>
                             <TableCell>
-                              {getStatusBadge(app.aiAnalysis.recommendation)}
+                              {getStatusBadge((app.ai_analysis as any).recommendation)}
                             </TableCell>
                             <TableCell>
                               <Button
@@ -233,21 +252,21 @@ const ApplicationResults = () => {
                       <h4 className="font-semibold mb-2">Candidate Info</h4>
                       <p className="text-sm"><strong>Name:</strong> {selectedApplication.name}</p>
                       <p className="text-sm"><strong>Email:</strong> {selectedApplication.email}</p>
-                      <p className="text-sm"><strong>Applied:</strong> {new Date(selectedApplication.submittedAt).toLocaleDateString()}</p>
+                      <p className="text-sm"><strong>Applied:</strong> {new Date(selectedApplication.submitted_at).toLocaleDateString()}</p>
                     </div>
 
                     <div>
                       <h4 className="font-semibold mb-2">Match Score</h4>
                       <div className="flex items-center gap-3">
-                        <span className="text-2xl font-bold">{selectedApplication.aiAnalysis.matchScore}%</span>
-                        {getStatusIcon(selectedApplication.aiAnalysis.recommendation)}
+                        <span className="text-2xl font-bold">{(selectedApplication.ai_analysis as any).matchScore}%</span>
+                        {getStatusIcon((selectedApplication.ai_analysis as any).recommendation)}
                       </div>
                     </div>
 
                     <div>
                       <h4 className="font-semibold mb-2">Matched Skills</h4>
                       <div className="flex flex-wrap gap-1">
-                        {selectedApplication.aiAnalysis.matchedSkills.map((skill, index) => (
+                        {(selectedApplication.ai_analysis as any).matchedSkills?.map((skill: string, index: number) => (
                           <Badge key={index} variant="secondary" className="text-xs">
                             {skill}
                           </Badge>
@@ -258,7 +277,7 @@ const ApplicationResults = () => {
                     <div>
                       <h4 className="font-semibold mb-2">Missing Skills</h4>
                       <div className="flex flex-wrap gap-1">
-                        {selectedApplication.aiAnalysis.missingSkills.map((skill, index) => (
+                        {(selectedApplication.ai_analysis as any).missingSkills?.map((skill: string, index: number) => (
                           <Badge key={index} variant="outline" className="text-xs">
                             {skill}
                           </Badge>
@@ -269,16 +288,16 @@ const ApplicationResults = () => {
                     <div>
                       <h4 className="font-semibold mb-2">AI Summary</h4>
                       <p className="text-sm text-muted-foreground">
-                        {selectedApplication.aiAnalysis.summary}
+                        {(selectedApplication.ai_analysis as any).summary}
                       </p>
                     </div>
 
                     <div>
                       <h4 className="font-semibold mb-2">Recommendation</h4>
                       <div className="flex items-center gap-2">
-                        {getStatusIcon(selectedApplication.aiAnalysis.recommendation)}
+                        {getStatusIcon((selectedApplication.ai_analysis as any).recommendation)}
                         <span className="text-sm font-medium">
-                          {selectedApplication.aiAnalysis.recommendation}
+                          {(selectedApplication.ai_analysis as any).recommendation}
                         </span>
                       </div>
                     </div>

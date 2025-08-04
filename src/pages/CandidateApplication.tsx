@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Upload, FileText, Send, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { analyzeResumeWithGemini, extractTextFromFile } from "@/lib/gemini";
+import { supabase } from "@/integrations/supabase/client";
 
 const CandidateApplication = () => {
   const { jobId } = useParams();
@@ -22,13 +23,26 @@ const CandidateApplication = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (jobId) {
-      const storedJob = localStorage.getItem(`job_${jobId}`);
-      if (storedJob) {
-        setJobData(JSON.parse(storedJob));
-      }
-    }
+    loadJobData();
   }, [jobId]);
+
+  const loadJobData = async () => {
+    if (!jobId) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('*')
+        .eq('id', jobId)
+        .single();
+
+      if (error) throw error;
+      setJobData(data);
+    } catch (error) {
+      console.error('Error loading job:', error);
+      setJobData(null);
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -50,7 +64,7 @@ const CandidateApplication = () => {
   };
 
   const handleSubmit = async () => {
-    if (!applicationData.name || !applicationData.email || !applicationData.resume) {
+    if (!applicationData.name || !applicationData.email || !applicationData.resume || !jobId) {
       toast({
         title: "Missing Information",
         description: "Please fill in all fields and upload your resume",
@@ -68,26 +82,21 @@ const CandidateApplication = () => {
       // Process with AI
       const aiResult = await processResumeWithAI(resumeText, jobData?.description || "");
 
-      // Store application result
-      const application = {
-        id: Date.now().toString(),
-        jobId,
-        name: applicationData.name,
-        email: applicationData.email,
-        resumeFileName: applicationData.resume.name,
-        aiAnalysis: aiResult,
-        submittedAt: new Date().toISOString()
-      };
+      // Store application in database
+      const { data, error } = await supabase
+        .from('applications')
+        .insert({
+          job_id: jobId,
+          name: applicationData.name,
+          email: applicationData.email,
+          resume_file_name: applicationData.resume.name,
+          resume_text: resumeText,
+          ai_analysis: aiResult as any
+        })
+        .select()
+        .single();
 
-      const existingApplications = JSON.parse(localStorage.getItem("applications") || "[]");
-      existingApplications.push(application);
-      localStorage.setItem("applications", JSON.stringify(existingApplications));
-
-      // Update job applicant count
-      if (jobData) {
-        const updatedJob = { ...jobData, applicants: (jobData.applicants || 0) + 1 };
-        localStorage.setItem(`job_${jobId}`, JSON.stringify(updatedJob));
-      }
+      if (error) throw error;
 
       toast({
         title: "Application Submitted Successfully!",
@@ -99,6 +108,7 @@ const CandidateApplication = () => {
       setApplicationData({ name: "", email: "", resume: null });
       
     } catch (error) {
+      console.error('Error submitting application:', error);
       toast({
         title: "Submission Failed",
         description: "There was an error processing your application. Please try again.",

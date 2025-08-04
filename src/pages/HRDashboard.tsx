@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Briefcase, Users, TrendingUp, Plus } from "lucide-react";
+import { Briefcase, Users, TrendingUp, Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const HRDashboard = () => {
   const [formData, setFormData] = useState({
@@ -15,102 +16,56 @@ const HRDashboard = () => {
     jobDescription: "",
     vacancies: 1
   });
-  const [jobs, setJobs] = useState<any[]>(() => {
-    // Create a demo job for testing
-    const demoJob = {
-      id: "demo",
-      company: "TechCorp Solutions",
-      title: "Senior Software Engineer",
-      description: `We are seeking a highly skilled Senior Software Engineer to join our growing development team. 
-
-Key Responsibilities:
-• Design and develop scalable web applications using React and Node.js
-• Collaborate with cross-functional teams to deliver high-quality software solutions
-• Mentor junior developers and provide technical guidance
-• Participate in code reviews and maintain coding standards
-• Work with cloud platforms (AWS, Azure) for deployment and scaling
-
-Required Skills:
-• 5+ years of experience in software development
-• Strong proficiency in JavaScript, TypeScript, React, and Node.js
-• Experience with cloud platforms (AWS, Azure, or GCP)
-• Knowledge of containerization (Docker, Kubernetes)
-• Strong problem-solving and communication skills
-• Experience with agile development methodologies
-
-Preferred Qualifications:
-• Bachelor's degree in Computer Science or related field
-• Experience with microservices architecture
-• DevOps experience with CI/CD pipelines
-• Team leadership experience`,
-      vacancies: 2,
-      applicants: 3,
-      createdAt: new Date().toLocaleDateString()
-    };
-    
-    // Store demo job
-    localStorage.setItem(`job_demo`, JSON.stringify(demoJob));
-    
-    // Create demo applications
-    const demoApplications = [
-      {
-        id: "app1",
-        jobId: "demo",
-        name: "Sarah Chen",
-        email: "sarah.chen@email.com",
-        resumeFileName: "Sarah_Chen_Resume.pdf",
-        aiAnalysis: {
-          matchScore: 92,
-          matchedSkills: ["JavaScript", "TypeScript", "React", "Node.js", "AWS", "Team Leadership", "Problem Solving"],
-          missingSkills: ["Kubernetes", "DevOps"],
-          summary: "Excellent candidate with strong frontend and backend experience. Demonstrates leadership skills and extensive cloud platform knowledge. Minor gaps in container orchestration.",
-          recommendation: "Shortlist for Next Round"
-        },
-        submittedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() // 2 days ago
-      },
-      {
-        id: "app2",
-        jobId: "demo",
-        name: "Marcus Johnson",
-        email: "marcus.johnson@email.com",
-        resumeFileName: "Marcus_Johnson_Resume.pdf",
-        aiAnalysis: {
-          matchScore: 78,
-          matchedSkills: ["JavaScript", "React", "Docker", "Communication", "Agile"],
-          missingSkills: ["TypeScript", "Node.js", "AWS", "Team Leadership"],
-          summary: "Solid technical foundation with good containerization skills. Shows potential but lacks senior-level experience and cloud expertise required for this role.",
-          recommendation: "Consider with Caution"
-        },
-        submittedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString() // 1 day ago
-      },
-      {
-        id: "app3",
-        jobId: "demo",
-        name: "Emma Rodriguez",
-        email: "emma.rodriguez@email.com",
-        resumeFileName: "Emma_Rodriguez_Resume.pdf",
-        aiAnalysis: {
-          matchScore: 88,
-          matchedSkills: ["JavaScript", "TypeScript", "React", "Node.js", "Azure", "Docker", "Kubernetes", "CI/CD"],
-          missingSkills: ["Team Leadership"],
-          summary: "Strong technical candidate with excellent full-stack skills and DevOps experience. Has worked with cloud platforms and modern development practices. Would benefit from leadership opportunities.",
-          recommendation: "Shortlist for Next Round"
-        },
-        submittedAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString() // 6 hours ago
-      }
-    ];
-    
-    localStorage.setItem("applications", JSON.stringify(demoApplications));
-    
-    return [demoJob];
-  });
+  const [jobs, setJobs] = useState<any[]>([]);
+  const [applications, setApplications] = useState<any[]>([]);
   const { toast } = useToast();
+
+  // Load jobs and applications from database
+  useEffect(() => {
+    loadJobsAndApplications();
+  }, []);
+
+  const loadJobsAndApplications = async () => {
+    try {
+      // Load jobs
+      const { data: jobsData, error: jobsError } = await supabase
+        .from('jobs')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (jobsError) throw jobsError;
+
+      // Load applications and count for each job
+      const { data: applicationsData, error: applicationsError } = await supabase
+        .from('applications')
+        .select('*');
+
+      if (applicationsError) throw applicationsError;
+
+      // Count applications per job
+      const jobsWithCounts = jobsData?.map(job => ({
+        ...job,
+        applicants: applicationsData?.filter(app => app.job_id === job.id).length || 0,
+        createdAt: new Date(job.created_at).toLocaleDateString()
+      })) || [];
+
+      setJobs(jobsWithCounts);
+      setApplications(applicationsData || []);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load jobs and applications",
+        variant: "destructive"
+      });
+    }
+  };
 
   const handleInputChange = (field: string, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handlePostJob = () => {
+  const handlePostJob = async () => {
     if (!formData.company || !formData.jobTitle || !formData.jobDescription) {
       toast({
         title: "Missing Information",
@@ -120,37 +75,75 @@ Preferred Qualifications:
       return;
     }
 
-    const jobId = Date.now().toString();
-    const newJob = {
-      id: jobId,
-      company: formData.company,
-      title: formData.jobTitle,
-      description: formData.jobDescription,
-      vacancies: formData.vacancies,
-      applicants: 0,
-      createdAt: new Date().toLocaleDateString()
-    };
+    try {
+      const { data, error } = await supabase
+        .from('jobs')
+        .insert([
+          {
+            company: formData.company,
+            title: formData.jobTitle,
+            description: formData.jobDescription,
+            vacancies: formData.vacancies
+          }
+        ])
+        .select()
+        .single();
 
-    setJobs(prev => [...prev, newJob]);
-    
-    const applicationLink = `${window.location.origin}/apply/${jobId}`;
-    
-    toast({
-      title: "Job Posted Successfully!",
-      description: `Application link: ${applicationLink}`,
-      variant: "default"
-    });
+      if (error) throw error;
 
-    // Store job data for candidates to access
-    localStorage.setItem(`job_${jobId}`, JSON.stringify(newJob));
+      const applicationLink = `${window.location.origin}/apply/${data.id}`;
+      
+      toast({
+        title: "Job Posted Successfully!",
+        description: `Application link: ${applicationLink}`,
+        variant: "default"
+      });
 
-    // Reset form
-    setFormData({
-      company: "",
-      jobTitle: "",
-      jobDescription: "",
-      vacancies: 1
-    });
+      // Reset form
+      setFormData({
+        company: "",
+        jobTitle: "",
+        jobDescription: "",
+        vacancies: 1
+      });
+
+      // Reload jobs
+      loadJobsAndApplications();
+    } catch (error) {
+      console.error('Error posting job:', error);
+      toast({
+        title: "Error",
+        description: "Failed to post job",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteJob = async (jobId: string) => {
+    try {
+      const { error } = await supabase
+        .from('jobs')
+        .delete()
+        .eq('id', jobId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Job Deleted",
+        description: "Job posting has been removed successfully",
+        variant: "default"
+      });
+
+      // Reload jobs
+      loadJobsAndApplications();
+    } catch (error) {
+      console.error('Error deleting job:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete job",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -289,7 +282,17 @@ Preferred Qualifications:
                           <h3 className="font-semibold">{job.title}</h3>
                           <p className="text-sm text-muted-foreground">{job.company}</p>
                         </div>
-                        <Badge variant="secondary">{job.applicants} applicants</Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary">{job.applicants} applicants</Badge>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteJob(job.id)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
                       <p className="text-sm text-muted-foreground">
                         {job.description.substring(0, 100)}...
