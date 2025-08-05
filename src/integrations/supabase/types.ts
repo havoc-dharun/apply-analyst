@@ -61,6 +61,7 @@ export type Database = {
           created_at: string
           description: string
           id: string
+          keywords: string[]
           title: string
           updated_at: string
           vacancies: number
@@ -70,6 +71,7 @@ export type Database = {
           created_at?: string
           description: string
           id?: string
+          keywords?: string[]
           title: string
           updated_at?: string
           vacancies?: number
@@ -79,6 +81,7 @@ export type Database = {
           created_at?: string
           description?: string
           id?: string
+          keywords?: string[]
           title?: string
           updated_at?: string
           vacancies?: number

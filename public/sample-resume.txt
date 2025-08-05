@@ -1,0 +1,68 @@
+JOHN DOE
+Software Engineer
+john.doe@email.com | (555) 123-4567 | linkedin.com/in/johndoe
+
+PROFESSIONAL SUMMARY
+Experienced software engineer with 5+ years of expertise in full-stack development, specializing in JavaScript, React, Node.js, and Python. Proven track record of delivering scalable web applications and leading development teams.
+
+TECHNICAL SKILLS
+• Programming Languages: JavaScript, TypeScript, Python, Java, SQL
+• Frontend: React, Vue.js, HTML5, CSS3, Tailwind CSS
+• Backend: Node.js, Express.js, Django, Flask
+• Databases: PostgreSQL, MongoDB, MySQL
+• Cloud Platforms: AWS, Google Cloud Platform, Azure
+• DevOps: Docker, Kubernetes, CI/CD pipelines
+• Version Control: Git, GitHub, GitLab
+
+PROFESSIONAL EXPERIENCE
+
+Senior Software Engineer | TechCorp Inc. | 2022 - Present
+• Led development of a customer management system serving 50,000+ users
+• Implemented microservices architecture using Node.js and React
+• Reduced application load time by 40% through optimization
+• Mentored 3 junior developers and conducted code reviews
+• Collaborated with product managers to define technical requirements
+
+Software Developer | StartupXYZ | 2020 - 2022
+• Developed RESTful APIs using Python Flask and PostgreSQL
+• Built responsive web applications with React and TypeScript
+• Integrated third-party payment systems (Stripe, PayPal)
+• Participated in agile development cycles and sprint planning
+• Deployed applications using Docker and AWS
+
+Junior Developer | WebSolutions | 2019 - 2020
+• Created and maintained WordPress websites for clients
+• Developed custom plugins and themes using PHP
+• Optimized website performance and SEO
+• Provided technical support to clients
+
+EDUCATION
+Bachelor of Science in Computer Science
+University of Technology | 2019
+GPA: 3.8/4.0
+
+CERTIFICATIONS
+• AWS Certified Developer Associate
+• Google Cloud Professional Developer
+• MongoDB Certified Developer
+
+PROJECTS
+E-Commerce Platform | React, Node.js, MongoDB
+• Built a full-stack e-commerce solution with payment integration
+• Implemented user authentication and admin dashboard
+• Deployed on AWS with CI/CD pipeline
+
+Task Management App | Vue.js, Python, PostgreSQL
+• Developed a collaborative task management application
+• Real-time updates using WebSockets
+• Mobile-responsive design with PWA features
+
+LANGUAGES
+• English (Native)
+• Spanish (Conversational)
+
+INTERESTS
+• Open source contribution
+• Machine learning and AI
+• Blockchain technology
+• Technical writing and blogging 

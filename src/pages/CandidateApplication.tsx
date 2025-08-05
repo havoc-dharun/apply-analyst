@@ -8,6 +8,64 @@ import { Badge } from "@/components/ui/badge";
 import { Upload, FileText, Send, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { analyzeResumeWithGemini, extractTextFromFile } from "@/lib/gemini";
+
+// Helper function to extract keywords from job description (copied from gemini.ts)
+const extractKeywordsFromDescription = (description: string): string[] => {
+  const descriptionLower = description.toLowerCase();
+  const keywords: string[] = [];
+  
+  // Common programming languages
+  const languages = ['javascript', 'react', 'node.js', 'python', 'java', 'c++', 'c#', 'php', 'ruby', 'go', 'rust', 'typescript'];
+  languages.forEach(lang => {
+    if (descriptionLower.includes(lang)) {
+      keywords.push(lang.charAt(0).toUpperCase() + lang.slice(1));
+    }
+  });
+  
+  // Frameworks and libraries
+  const frameworks = ['react', 'vue', 'angular', 'express', 'django', 'flask', 'spring', 'laravel', 'next.js', 'nuxt.js'];
+  frameworks.forEach(framework => {
+    if (descriptionLower.includes(framework)) {
+      keywords.push(framework.charAt(0).toUpperCase() + framework.slice(1));
+    }
+  });
+  
+  // Databases
+  const databases = ['mysql', 'postgresql', 'mongodb', 'redis', 'sqlite', 'oracle', 'sql'];
+  databases.forEach(db => {
+    if (descriptionLower.includes(db)) {
+      keywords.push(db.charAt(0).toUpperCase() + db.slice(1));
+    }
+  });
+  
+  // Cloud platforms
+  const clouds = ['aws', 'azure', 'gcp', 'google cloud', 'amazon web services'];
+  clouds.forEach(cloud => {
+    if (descriptionLower.includes(cloud)) {
+      keywords.push(cloud.toUpperCase());
+    }
+  });
+  
+  // Development tools
+  const tools = ['git', 'docker', 'kubernetes', 'jenkins', 'ci/cd', 'agile', 'scrum'];
+  tools.forEach(tool => {
+    if (descriptionLower.includes(tool)) {
+      keywords.push(tool.charAt(0).toUpperCase() + tool.slice(1));
+    }
+  });
+  
+  // Check for "Required Keywords" section in description
+  const requiredKeywordsMatch = description.match(/Required Keywords:\s*([^.\n]+)/i);
+  if (requiredKeywordsMatch) {
+    const requiredKeywords = requiredKeywordsMatch[1]
+      .split(',')
+      .map(keyword => keyword.trim())
+      .filter(keyword => keyword.length > 0);
+    keywords.push(...requiredKeywords);
+  }
+  
+  return [...new Set(keywords)]; // Remove duplicates
+};
 import { supabase } from "@/integrations/supabase/client";
 
 const CandidateApplication = () => {
@@ -24,19 +82,45 @@ const CandidateApplication = () => {
 
   useEffect(() => {
     loadJobData();
+    
+    // Test database connection
+    const testConnection = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('jobs')
+          .select('count')
+          .limit(1);
+        
+        if (error) {
+          console.error("Database connection test failed:", error);
+        } else {
+          console.log("Database connection test successful");
+        }
+      } catch (error) {
+        console.error("Database connection test error:", error);
+      }
+    };
+    
+    testConnection();
   }, [jobId]);
 
   const loadJobData = async () => {
     if (!jobId) return;
 
     try {
+      console.log("Loading job data for ID:", jobId);
       const { data, error } = await supabase
         .from('jobs')
         .select('*')
         .eq('id', jobId)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase error loading job:", error);
+        throw error;
+      }
+      
+      console.log("Job data loaded successfully:", data);
       setJobData(data);
     } catch (error) {
       console.error('Error loading job:', error);
@@ -46,21 +130,28 @@ const CandidateApplication = () => {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    console.log("File selected:", file);
     if (file) {
-      if (file.type === "application/pdf" || file.type.includes("document")) {
+      console.log("File type:", file.type);
+      console.log("File size:", file.size);
+      console.log("File name:", file.name);
+      
+      if (file.type === "application/pdf" || file.type.includes("document") || file.type === "text/plain") {
         setApplicationData(prev => ({ ...prev, resume: file }));
+        console.log("File accepted and set in state");
       } else {
+        console.log("Invalid file type rejected:", file.type);
         toast({
           title: "Invalid File Type",
-          description: "Please upload a PDF or Word document",
+          description: "Please upload a PDF, Word document, or text file",
           variant: "destructive"
         });
       }
     }
   };
 
-  const processResumeWithAI = async (resumeText: string, jobDescription: string) => {
-    return await analyzeResumeWithGemini(resumeText, jobDescription);
+  const processResumeWithAI = async (resumeText: string, jobDescription: string, keywords: string[]) => {
+    return await analyzeResumeWithGemini(resumeText, jobDescription, keywords);
   };
 
   const handleSubmit = async () => {
@@ -77,6 +168,9 @@ const CandidateApplication = () => {
 
     try {
       console.log("Starting application submission...");
+      console.log("Job ID:", jobId);
+      console.log("Job Data:", jobData);
+      console.log("Application Data:", applicationData);
       
       // Extract resume text from uploaded file
       console.log("Extracting text from file...");
@@ -85,21 +179,29 @@ const CandidateApplication = () => {
       
       // Process with AI
       console.log("Analyzing with Gemini API...");
-      const aiResult = await processResumeWithAI(resumeText, jobData?.description || "");
+      
+      // Extract keywords from job description
+      const extractedKeywords = extractKeywordsFromDescription(jobData?.description || "");
+      console.log("Extracted keywords for analysis:", extractedKeywords);
+      
+      const aiResult = await processResumeWithAI(resumeText, jobData?.description || "", extractedKeywords);
       console.log("AI analysis complete:", aiResult);
 
       // Store application in database
       console.log("Saving to database...");
+      const applicationPayload = {
+        job_id: jobId,
+        name: applicationData.name,
+        email: applicationData.email,
+        resume_file_name: applicationData.resume.name,
+        resume_text: resumeText,
+        ai_analysis: aiResult as any
+      };
+      console.log("Application payload:", applicationPayload);
+      
       const { data, error } = await supabase
         .from('applications')
-        .insert({
-          job_id: jobId,
-          name: applicationData.name,
-          email: applicationData.email,
-          resume_file_name: applicationData.resume.name,
-          resume_text: resumeText,
-          ai_analysis: aiResult as any
-        })
+        .insert(applicationPayload)
         .select()
         .single();
 
@@ -152,11 +254,19 @@ const CandidateApplication = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-card">
+    <div className="min-h-screen bg-gradient-card relative overflow-hidden">
+      {/* Floating Background Elements */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-20 left-10 w-32 h-32 bg-primary/5 rounded-full blur-xl"></div>
+        <div className="absolute top-40 right-20 w-24 h-24 bg-accent/5 rounded-full blur-xl"></div>
+        <div className="absolute bottom-40 left-1/3 w-40 h-40 bg-success/5 rounded-full blur-xl"></div>
+        <div className="absolute top-1/2 right-1/4 w-20 h-20 bg-warning/5 rounded-full blur-xl"></div>
+        <div className="absolute bottom-20 right-10 w-28 h-28 bg-primary/5 rounded-full blur-xl"></div>
+      </div>
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-2xl mx-auto relative z-10">
           {/* Job Info Header */}
-          <Card className="shadow-soft mb-8">
+          <Card className="shadow-soft mb-8 bg-background/80 backdrop-blur-sm border border-border/50">
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div>
@@ -175,7 +285,7 @@ const CandidateApplication = () => {
           </Card>
 
           {/* Application Form */}
-          <Card className="shadow-elegant">
+          <Card className="shadow-elegant bg-background/80 backdrop-blur-sm border border-border/50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Send className="w-5 h-5" />
@@ -221,13 +331,13 @@ const CandidateApplication = () => {
                         <p className="mb-2 text-sm text-muted-foreground">
                           <span className="font-semibold">Click to upload</span> your resume
                         </p>
-                        <p className="text-xs text-muted-foreground">PDF or Word documents (MAX. 10MB)</p>
+                        <p className="text-xs text-muted-foreground">PDF, Word documents, or text files (MAX. 10MB)</p>
                       </div>
                       <input
                         id="resume"
                         type="file"
                         className="hidden"
-                        accept=".pdf,.doc,.docx"
+                        accept=".pdf,.doc,.docx,.txt"
                         onChange={handleFileChange}
                       />
                     </label>
@@ -249,6 +359,11 @@ const CandidateApplication = () => {
                   <li>• HR team will review the analysis and contact qualified candidates</li>
                   <li>• You'll receive feedback within 2-3 business days</li>
                 </ul>
+                <div className="mt-3 p-2 bg-primary/10 rounded border border-primary/20">
+                  <p className="text-xs text-primary-foreground">
+                    💡 <strong>Testing Tip:</strong> You can download a sample resume from <a href="/sample-resume.txt" download className="underline">here</a> to test the AI analysis functionality.
+                  </p>
+                </div>
               </div>
 
               <Button
@@ -259,7 +374,10 @@ const CandidateApplication = () => {
                 className="w-full bg-gradient-hero text-white hover:shadow-elegant transform hover:scale-105 transition-smooth font-semibold border-0"
               >
                 {isSubmitting ? (
-                  "Processing Application..."
+                  <>
+                    <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Analyzing Resume with AI...
+                  </>
                 ) : (
                   <>
                     <Send className="w-4 h-4 mr-2" />
