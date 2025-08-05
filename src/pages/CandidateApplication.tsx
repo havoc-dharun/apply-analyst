@@ -256,7 +256,7 @@ const CandidateApplication = () => {
                 disabled={isSubmitting}
                 variant="hero"
                 size="lg"
-                className="w-full"
+                className="w-full bg-gradient-hero text-white hover:shadow-elegant transform hover:scale-105 transition-smooth font-semibold border-0"
               >
                 {isSubmitting ? (
                   "Processing Application..."
