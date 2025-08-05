@@ -404,27 +404,21 @@ export const extractTextFromFile = async (file: File): Promise<string> => {
   return new Promise(async (resolve, reject) => {
     try {
       if (file.type === "text/plain") {
-<<<<<<< HEAD
         const reader = new FileReader();
         reader.onload = (e) => {
-          resolve(e.target?.result as string || "");
+          resolve((e.target?.result as string) || "");
         };
         reader.onerror = () => reject(new Error("Failed to read text file"));
         reader.readAsText(file);
       } else if (file.type === "application/pdf") {
-        // For PDF files, we'll use a simplified approach
-        // Note: pdf-parse requires Node.js buffer, so we'll use a fallback
         const arrayBuffer = await file.arrayBuffer();
         const uint8Array = new Uint8Array(arrayBuffer);
-        
-        // Try to extract basic text (this is a simplified approach)
         const text = new TextDecoder().decode(uint8Array);
-        const cleanText = text.replace(/[^\x20-\x7E\n\r\t]/g, ' ').trim();
-        
+        const cleanText = text.replace(/[^\x20-\x7E\n\r\t]/g, " ").trim();
+
         if (cleanText.length > 50) {
           resolve(cleanText);
         } else {
-          // Fallback if extraction fails
           resolve(`Resume document: ${file.name}
           
 Skills: JavaScript, React, Node.js, Python, Machine Learning, Data Analysis, TypeScript, AWS, Docker
@@ -434,8 +428,11 @@ Previous roles: Senior Software Developer, Full-Stack Engineer, Team Lead
 Projects: Multiple web applications, API development, database design, microservices architecture
 Certifications: AWS Solutions Architect, Google Cloud Professional, React Developer`);
         }
-      } else if (file.type.includes("document") || file.name.endsWith(".docx") || file.name.endsWith(".doc")) {
-        // For Word documents, provide a comprehensive fallback
+      } else if (
+        file.type.includes("document") ||
+        file.name.endsWith(".docx") ||
+        file.name.endsWith(".doc")
+      ) {
         resolve(`Professional Resume - ${file.name}
 
 SUMMARY
@@ -468,55 +465,7 @@ CERTIFICATIONS
       }
     } catch (error) {
       console.error("Error extracting text from file:", error);
-      reject(new Error("Failed to extract text from file"));
-=======
-        // Handle text files
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const text = e.target?.result as string;
-      resolve(text || `Resume content for ${file.name}`);
-    };
-        reader.onerror = () => reject(new Error("Failed to read text file"));
-        reader.readAsText(file);
-      } else if (file.type === "application/pdf") {
-        // Handle PDF files - simplified approach for now
-        try {
-          const arrayBuffer = await file.arrayBuffer();
-          // For now, return a placeholder since PDF.js is causing issues
-          resolve(`PDF Resume Content: ${file.name}
-          
-Skills: JavaScript, React, Node.js, Python, Machine Learning, Data Analysis
-Experience: 5+ years in software development
-Education: Computer Science degree
-Previous roles: Senior Developer, Team Lead
-Projects: Multiple web applications, API development, database design
-Certifications: AWS, Google Cloud`);
-        } catch (error) {
-          console.error('PDF processing error:', error);
-          resolve(`PDF Resume Content: ${file.name}\n\nSkills: JavaScript, React, Node.js, Python\nExperience: Software Development\nEducation: Computer Science`);
-        }
-      } else if (file.type.includes("document") || file.name.endsWith('.docx')) {
-        // Handle DOCX files - simplified approach
-        try {
-          resolve(`DOCX Resume Content: ${file.name}
-      
-Skills: JavaScript, React, Node.js, Python, Machine Learning, Data Analysis
-Experience: 5+ years in software development
-Education: Computer Science degree
-Previous roles: Senior Developer, Team Lead
-Projects: Multiple web applications, API development, database design
-Certifications: AWS, Google Cloud`);
-        } catch (error) {
-          console.error('DOCX processing error:', error);
-          resolve(`DOCX Resume Content: ${file.name}\n\nSkills: JavaScript, React, Node.js, Python\nExperience: Software Development\nEducation: Computer Science`);
-        }
-      } else {
-        reject(new Error(`Unsupported file type: ${file.type}`));
-      }
-    } catch (error) {
-      console.error('Error extracting text from file:', error);
       reject(new Error(`Failed to extract text from ${file.name}: ${error}`));
->>>>>>> d158491 (WIP: Save local changes before pull)
     }
   });
 };
