@@ -5,43 +5,100 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Briefcase, Users, TrendingUp, Plus, Trash2 } from "lucide-react";
+import { Briefcase, Users, TrendingUp, Plus, Trash2, LogOut, Copy, Eye, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
+import { User, Session } from '@supabase/supabase-js';
 
 const HRDashboard = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<any>(null);
   const [formData, setFormData] = useState({
-    company: "",
-    jobTitle: "",
-    jobDescription: "",
-    keywords: "",
+    title: "",
+    description: "",
+    salary: "",
+    location: "",
     vacancies: 1
   });
   const [jobs, setJobs] = useState<any[]>([]);
   const [applications, setApplications] = useState<any[]>([]);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
-  // Load jobs and applications from database
+  // Auth state management
   useEffect(() => {
-    loadJobsAndApplications();
-  }, []);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (!session?.user) {
+        navigate('/auth');
+      }
+    });
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (!session?.user) {
+        navigate('/auth');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  // Load user profile and data
+  useEffect(() => {
+    if (user) {
+      loadUserProfile();
+      loadJobsAndApplications();
+    }
+  }, [user]);
+
+  const loadUserProfile = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user?.id)
+        .single();
+
+      if (error) throw error;
+      setProfile(data);
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    }
+  };
 
   const loadJobsAndApplications = async () => {
     try {
-      // Load jobs
+      // Load jobs for this user only
       const { data: jobsData, error: jobsError } = await supabase
         .from('jobs')
         .select('*')
+        .eq('hr_user_id', user?.id)
         .order('created_at', { ascending: false });
 
       if (jobsError) throw jobsError;
 
-      // Load applications and count for each job
-      const { data: applicationsData, error: applicationsError } = await supabase
-        .from('applications')
-        .select('*');
+      // Load applications for this user's jobs
+      const jobIds = jobsData?.map(job => job.id) || [];
+      let applicationsData: any[] = [];
+      
+      if (jobIds.length > 0) {
+        const { data, error: applicationsError } = await supabase
+          .from('applications')
+          .select('*')
+          .in('job_id', jobIds)
+          .order('submitted_at', { ascending: false });
 
-      if (applicationsError) throw applicationsError;
+        if (applicationsError) throw applicationsError;
+        applicationsData = data || [];
+      }
 
       // Count applications per job
       const jobsWithCounts = jobsData?.map(job => ({
@@ -51,7 +108,7 @@ const HRDashboard = () => {
       })) || [];
 
       setJobs(jobsWithCounts);
-      setApplications(applicationsData || []);
+      setApplications(applicationsData);
     } catch (error) {
       console.error('Error loading data:', error);
       toast({
@@ -67,7 +124,7 @@ const HRDashboard = () => {
   };
 
   const handlePostJob = async () => {
-    if (!formData.company || !formData.jobTitle || !formData.jobDescription) {
+    if (!formData.title || !formData.description) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields",
@@ -76,24 +133,17 @@ const HRDashboard = () => {
       return;
     }
 
-    // Parse keywords from comma-separated string
-    const keywords = formData.keywords
-      .split(',')
-      .map(keyword => keyword.trim())
-      .filter(keyword => keyword.length > 0);
-
-    // Add keywords to the job description for AI analysis
-    const enhancedDescription = formData.jobDescription + 
-      (keywords.length > 0 ? `\n\nRequired Keywords: ${keywords.join(', ')}` : '');
-
     try {
       const { data, error } = await supabase
         .from('jobs')
         .insert([
           {
-            company: formData.company,
-            title: formData.jobTitle,
-            description: enhancedDescription,
+            hr_user_id: user?.id,
+            company: profile?.company_name || 'Company',
+            title: formData.title,
+            description: formData.description,
+            salary: formData.salary,
+            location: formData.location,
             vacancies: formData.vacancies
           }
         ])
@@ -112,10 +162,10 @@ const HRDashboard = () => {
 
       // Reset form
       setFormData({
-        company: "",
-        jobTitle: "",
-        jobDescription: "",
-        keywords: "",
+        title: "",
+        description: "",
+        salary: "",
+        location: "",
         vacancies: 1
       });
 
@@ -136,7 +186,8 @@ const HRDashboard = () => {
       const { error } = await supabase
         .from('jobs')
         .delete()
-        .eq('id', jobId);
+        .eq('id', jobId)
+        .eq('hr_user_id', user?.id); // Ensure user can only delete their own jobs
 
       if (error) throw error;
 
@@ -158,6 +209,31 @@ const HRDashboard = () => {
     }
   };
 
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate('/auth');
+  };
+
+  const copyApplicationLink = (jobId: string) => {
+    const link = `${window.location.origin}/apply/${jobId}`;
+    navigator.clipboard.writeText(link);
+    toast({
+      title: "Link Copied!",
+      description: "Application link has been copied to clipboard",
+    });
+  };
+
+  if (!user || !session) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-card relative overflow-hidden">
       {/* Floating Background Elements */}
@@ -168,6 +244,7 @@ const HRDashboard = () => {
         <div className="absolute top-1/2 right-1/4 w-20 h-20 bg-warning/5 rounded-full blur-xl"></div>
         <div className="absolute bottom-20 right-10 w-28 h-28 bg-primary/5 rounded-full blur-xl"></div>
       </div>
+      
       {/* Header */}
       <div className="bg-gradient-hero text-primary-foreground py-12 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
@@ -182,19 +259,30 @@ const HRDashboard = () => {
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full animate-pulse"></div>
               </div>
               <div>
-                <h1 className="text-4xl font-bold">HR Assistant</h1>
-                <p className="text-primary-foreground/80 text-lg">AI-Powered Resume Evaluation System</p>
+                <h1 className="text-4xl font-bold">HR Dashboard</h1>
+                <p className="text-primary-foreground/80 text-lg">Welcome back, {profile?.full_name || user.email}</p>
+                <p className="text-primary-foreground/60 text-sm">{profile?.company_name}</p>
               </div>
             </div>
-            <div className="hidden md:block">
-              <div className="w-32 h-20 bg-gradient-to-br from-blue-500/20 to-purple-600/20 rounded-lg flex items-center justify-center shadow-lg">
-                <div className="text-center">
-                  <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-1">
-                    <Users className="w-4 h-4 text-primary" />
+            <div className="flex items-center gap-4">
+              <div className="hidden md:block">
+                <div className="w-32 h-20 bg-gradient-to-br from-blue-500/20 to-purple-600/20 rounded-lg flex items-center justify-center shadow-lg">
+                  <div className="text-center">
+                    <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-1">
+                      <Users className="w-4 h-4 text-primary" />
+                    </div>
+                    <p className="text-xs text-primary-foreground">AI-Powered HR</p>
                   </div>
-                  <p className="text-xs text-primary-foreground">AI-Powered HR</p>
                 </div>
               </div>
+              <Button 
+                variant="outline" 
+                onClick={handleSignOut}
+                className="bg-transparent border-white/20 text-white hover:bg-white/10"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
+              </Button>
             </div>
           </div>
         </div>
@@ -264,47 +352,46 @@ const HRDashboard = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="company">Company Name *</Label>
+                <Label htmlFor="title">Job Title *</Label>
                 <Input
-                  id="company"
-                  placeholder="Enter company name"
-                  value={formData.company}
-                  onChange={(e) => handleInputChange("company", e.target.value)}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="jobTitle">Job Title *</Label>
-                <Input
-                  id="jobTitle"
+                  id="title"
                   placeholder="e.g., Senior Software Engineer"
-                  value={formData.jobTitle}
-                  onChange={(e) => handleInputChange("jobTitle", e.target.value)}
+                  value={formData.title}
+                  onChange={(e) => handleInputChange("title", e.target.value)}
                 />
               </div>
               
               <div>
-                <Label htmlFor="jobDescription">Job Description *</Label>
+                <Label htmlFor="description">Job Description *</Label>
                 <Textarea
-                  id="jobDescription"
+                  id="description"
                   placeholder="Describe the role, requirements, skills needed..."
-                  value={formData.jobDescription}
-                  onChange={(e) => handleInputChange("jobDescription", e.target.value)}
+                  value={formData.description}
+                  onChange={(e) => handleInputChange("description", e.target.value)}
                   rows={6}
                 />
               </div>
               
-              <div>
-                <Label htmlFor="keywords">Required Keywords/Skills</Label>
-                <Input
-                  id="keywords"
-                  placeholder="JavaScript, React, Node.js, Python, AWS (comma-separated)"
-                  value={formData.keywords}
-                  onChange={(e) => handleInputChange("keywords", e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Enter key skills and technologies separated by commas. These will be used for AI analysis.
-                </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="salary">Salary</Label>
+                  <Input
+                    id="salary"
+                    placeholder="e.g., $80,000 - $120,000"
+                    value={formData.salary}
+                    onChange={(e) => handleInputChange("salary", e.target.value)}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="location">Location</Label>
+                  <Input
+                    id="location"
+                    placeholder="e.g., Remote, New York, etc."
+                    value={formData.location}
+                    onChange={(e) => handleInputChange("location", e.target.value)}
+                  />
+                </div>
               </div>
               
               <div>
@@ -327,7 +414,7 @@ const HRDashboard = () => {
           {/* Active Jobs */}
           <Card className="shadow-elegant bg-background/80 backdrop-blur-sm border border-border/50">
             <CardHeader>
-              <CardTitle>Active Job Postings</CardTitle>
+              <CardTitle>Your Job Postings</CardTitle>
               <CardDescription>Manage your current job openings</CardDescription>
             </CardHeader>
             <CardContent>
@@ -344,7 +431,8 @@ const HRDashboard = () => {
                       <div className="flex items-start justify-between">
                         <div>
                           <h3 className="font-semibold">{job.title}</h3>
-                          <p className="text-sm text-muted-foreground">{job.company}</p>
+                          {job.salary && <p className="text-sm text-success">{job.salary}</p>}
+                          {job.location && <p className="text-sm text-muted-foreground">{job.location}</p>}
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge variant="secondary">{job.applicants} applicants</Badge>
@@ -367,8 +455,17 @@ const HRDashboard = () => {
                           <Button 
                             variant="outline" 
                             size="sm"
+                            onClick={() => copyApplicationLink(job.id)}
+                          >
+                            <Copy className="w-4 h-4 mr-1" />
+                            Copy Link
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
                             onClick={() => window.open(`/apply/${job.id}`, '_blank')}
                           >
+                            <Eye className="w-4 h-4 mr-1" />
                             View Form
                           </Button>
                           <Button 

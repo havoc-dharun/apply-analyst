@@ -41,23 +41,23 @@ const Index = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
-              onClick={() => navigate("/hr")} 
+              onClick={() => navigate("/auth")} 
               variant="hero" 
               size="lg"
               className="bg-primary-foreground text-primary hover:bg-primary-foreground/90"
             >
               <Briefcase className="w-5 h-5 mr-2" />
-              HR Dashboard
+              HR Login
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
             <Button 
-              onClick={() => navigate("/hr")} 
+              onClick={() => navigate("/auth")} 
               variant="outline" 
               size="lg"
               className="border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10"
             >
               <Users className="w-5 h-5 mr-2" />
-              Post a Job
+              Get Started
             </Button>
           </div>
         </div>
@@ -204,7 +204,7 @@ const Index = () => {
                 </div>
               </div>
               <Button 
-                onClick={() => navigate("/hr")} 
+                onClick={() => navigate("/auth")} 
                 variant="hero" 
                 size="lg" 
                 className="w-full"
