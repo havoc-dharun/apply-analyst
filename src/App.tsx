@@ -8,6 +8,7 @@ import Auth from "./pages/Auth";
 import HRDashboard from "./pages/HRDashboard";
 import CandidateApplication from "./pages/CandidateApplication";
 import ApplicationResults from "./pages/ApplicationResults";
+import EnhancedApplicationResults from "./components/EnhancedApplicationResults";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,7 +24,7 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/hr" element={<HRDashboard />} />
           <Route path="/apply/:jobId" element={<CandidateApplication />} />
-          <Route path="/results/:jobId" element={<ApplicationResults />} />
+          <Route path="/results/:jobId" element={<EnhancedApplicationResults />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

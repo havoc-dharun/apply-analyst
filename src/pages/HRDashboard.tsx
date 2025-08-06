@@ -5,11 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Briefcase, Users, TrendingUp, Plus, Trash2, LogOut, Copy, Eye, Mail } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Briefcase, Users, TrendingUp, Plus, Trash2, LogOut, Copy, Eye, Mail, Wand2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { User, Session } from '@supabase/supabase-js';
+import JobDescriptionGenerator from '@/components/JobDescriptionGenerator';
 
 const HRDashboard = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -22,6 +24,7 @@ const HRDashboard = () => {
     location: "",
     vacancies: 1
   });
+  const [showGenerator, setShowGenerator] = useState(false);
   const [jobs, setJobs] = useState<any[]>([]);
   const [applications, setApplications] = useState<any[]>([]);
   const { toast } = useToast();
@@ -223,6 +226,19 @@ const HRDashboard = () => {
     });
   };
 
+  const handleGeneratedDescription = (description: string, title: string, company: string) => {
+    setFormData(prev => ({
+      ...prev,
+      title,
+      description
+    }));
+    setShowGenerator(false);
+    toast({
+      title: "Job Description Applied!",
+      description: "Generated description has been applied to the job posting form.",
+    });
+  };
+
   if (!user || !session) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -350,64 +366,83 @@ const HRDashboard = () => {
               </CardTitle>
               <CardDescription>Create a new job posting and generate candidate application form</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="title">Job Title *</Label>
-                <Input
-                  id="title"
-                  placeholder="e.g., Senior Software Engineer"
-                  value={formData.title}
-                  onChange={(e) => handleInputChange("title", e.target.value)}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="description">Job Description *</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Describe the role, requirements, skills needed..."
-                  value={formData.description}
-                  onChange={(e) => handleInputChange("description", e.target.value)}
-                  rows={6}
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="salary">Salary</Label>
-                  <Input
-                    id="salary"
-                    placeholder="e.g., $80,000 - $120,000"
-                    value={formData.salary}
-                    onChange={(e) => handleInputChange("salary", e.target.value)}
-                  />
-                </div>
+            <CardContent>
+              <Tabs value={showGenerator ? "generator" : "manual"} onValueChange={(value) => setShowGenerator(value === "generator")}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="manual">Manual Entry</TabsTrigger>
+                  <TabsTrigger value="generator" className="flex items-center gap-2">
+                    <Wand2 className="h-4 w-4" />
+                    AI Generator
+                  </TabsTrigger>
+                </TabsList>
                 
-                <div>
-                  <Label htmlFor="location">Location</Label>
-                  <Input
-                    id="location"
-                    placeholder="e.g., Remote, New York, etc."
-                    value={formData.location}
-                    onChange={(e) => handleInputChange("location", e.target.value)}
+                <TabsContent value="manual" className="space-y-4 mt-6">
+                  <div>
+                    <Label htmlFor="title">Job Title *</Label>
+                    <Input
+                      id="title"
+                      placeholder="e.g., Senior Software Engineer"
+                      value={formData.title}
+                      onChange={(e) => handleInputChange("title", e.target.value)}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="description">Job Description *</Label>
+                    <Textarea
+                      id="description"
+                      placeholder="Describe the role, requirements, skills needed..."
+                      value={formData.description}
+                      onChange={(e) => handleInputChange("description", e.target.value)}
+                      rows={6}
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="salary">Salary</Label>
+                      <Input
+                        id="salary"
+                        placeholder="e.g., $80,000 - $120,000"
+                        value={formData.salary}
+                        onChange={(e) => handleInputChange("salary", e.target.value)}
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="location">Location</Label>
+                      <Input
+                        id="location"
+                        placeholder="e.g., Remote, New York, etc."
+                        value={formData.location}
+                        onChange={(e) => handleInputChange("location", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="vacancies">Number of Vacancies</Label>
+                    <Input
+                      id="vacancies"
+                      type="number"
+                      min="1"
+                      value={formData.vacancies}
+                      onChange={(e) => handleInputChange("vacancies", parseInt(e.target.value) || 1)}
+                    />
+                  </div>
+                  
+                  <Button onClick={handlePostJob} size="lg" className="w-full">
+                    Post Job & Generate Application Link
+                  </Button>
+                </TabsContent>
+                
+                <TabsContent value="generator" className="mt-6">
+                  <JobDescriptionGenerator 
+                    onGenerate={handleGeneratedDescription}
+                    companyName={profile?.company_name || 'Your Company'}
                   />
-                </div>
-              </div>
-              
-              <div>
-                <Label htmlFor="vacancies">Number of Vacancies</Label>
-                <Input
-                  id="vacancies"
-                  type="number"
-                  min="1"
-                  value={formData.vacancies}
-                  onChange={(e) => handleInputChange("vacancies", parseInt(e.target.value) || 1)}
-                />
-              </div>
-              
-              <Button onClick={handlePostJob} variant="hero" size="lg" className="w-full">
-                Post Job & Generate Application Link
-              </Button>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
 
