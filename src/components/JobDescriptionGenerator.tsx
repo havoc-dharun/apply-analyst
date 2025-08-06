@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { X, Plus, Wand2, Copy, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import AIRecruitmentAssistant from './AIRecruitmentAssistant';
 
 interface JobDescriptionData {
   jobTitle: string;
@@ -26,12 +24,10 @@ interface JobDescriptionData {
 }
 
 interface JobDescriptionGeneratorProps {
-  recruiterName?: string;
   onGenerate: (description: string, title: string, company: string) => void;
   companyName: string;
 }
 
-  recruiterName
 const JobDescriptionGenerator: React.FC<JobDescriptionGeneratorProps> = ({ onGenerate, companyName }) => {
   const { toast } = useToast();
   const [formData, setFormData] = useState<JobDescriptionData>({
@@ -46,7 +42,6 @@ const JobDescriptionGenerator: React.FC<JobDescriptionGeneratorProps> = ({ onGen
     tools: [''],
     generatedDescription: ''
   });
-  const [activeTab, setActiveTab] = useState('ai-assistant');
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentResponsibility, setCurrentResponsibility] = useState('');
   const [currentSkill, setCurrentSkill] = useState('');
@@ -213,15 +208,6 @@ ${formData.tools.filter(t => t.trim()).map(tool => `• ${tool}`).join('\n')}` :
     });
   };
 
-  const handleAIJobDescriptionGenerated = (description: string, title: string, skills: string[]) => {
-    setFormData(prev => ({
-      ...prev,
-      jobTitle: title,
-      generatedDescription: description
-    }));
-    setActiveTab('manual-entry');
-  };
-
   return (
     <Card className="shadow-soft">
       <CardHeader className="bg-gradient-card">
@@ -231,24 +217,6 @@ ${formData.tools.filter(t => t.trim()).map(tool => `• ${tool}`).join('\n')}` :
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6 p-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="ai-assistant" className="flex items-center gap-2">
-              <Wand2 className="h-4 w-4" />
-              AI Assistant
-            </TabsTrigger>
-            <TabsTrigger value="manual-entry">Manual Entry</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="ai-assistant" className="mt-6">
-            <AIRecruitmentAssistant
-              recruiterName={recruiterName}
-              companyName={companyName}
-              onJobDescriptionGenerated={handleAIJobDescriptionGenerated}
-            />
-          </TabsContent>
-          
-          <TabsContent value="manual-entry" className="space-y-6 mt-6">
         {/* Basic Information */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
@@ -538,8 +506,6 @@ ${formData.tools.filter(t => t.trim()).map(tool => `• ${tool}`).join('\n')}` :
             </div>
           </div>
         )}
-          </TabsContent>
-        </Tabs>
       </CardContent>
     </Card>
   );

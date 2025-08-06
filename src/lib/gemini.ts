@@ -9,51 +9,6 @@ export interface GeminiAnalysisResult {
   recommendation: "Shortlist for Next Round" | "Consider with Caution" | "Reject";
 }
 
-export interface ConversationalAnalysisResult extends GeminiAnalysisResult {
-  conversationalSummary: string;
-  skillsBreakdown: {
-    strongMatches: string[];
-    partialMatches: string[];
-    missingCritical: string[];
-  };
-  recommendations: string[];
-}
-
-export const generateConversationalResumeAnalysis = async (
-  resumeText: string,
-  jobDescription: string,
-  candidateName: string,
-  recruiterName?: string
-): Promise<ConversationalAnalysisResult> => {
-  const basicAnalysis = await analyzeResumeWithGemini(resumeText, jobDescription);
-  
-  // Enhanced conversational summary
-  const conversationalSummary = `Hi ${recruiterName || 'there'}! I've analyzed ${candidateName}'s resume for this position. 
-
-**Overall Assessment: ${basicAnalysis.matchScore}% match**
-
-${candidateName} ${basicAnalysis.matchScore >= 80 ? 'is an excellent fit' : basicAnalysis.matchScore >= 60 ? 'shows good potential' : 'may need additional evaluation'} for this role. Here's what stands out:
-
-**Strengths:** ${basicAnalysis.matchedSkills.slice(0, 3).join(', ')}
-${basicAnalysis.missingSkills.length > 0 ? `**Areas to explore:** ${basicAnalysis.missingSkills.slice(0, 2).join(', ')}` : ''}
-
-**My recommendation:** ${basicAnalysis.recommendation}`;
-
-  return {
-    ...basicAnalysis,
-    conversationalSummary,
-    skillsBreakdown: {
-      strongMatches: basicAnalysis.matchedSkills.slice(0, 5),
-      partialMatches: basicAnalysis.matchedSkills.slice(5, 8),
-      missingCritical: basicAnalysis.missingSkills.slice(0, 3)
-    },
-    recommendations: [
-      basicAnalysis.recommendation === "Shortlist for Next Round" ? "Schedule an interview to discuss their experience" : "Consider for a different role or future opportunities",
-      "Ask about their experience with the missing skills during screening"
-    ]
-  };
-};
-
 export const analyzeResumeWithGemini = async (
   resumeText: string,
   jobDescription: string,

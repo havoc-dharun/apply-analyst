@@ -439,7 +439,6 @@ const HRDashboard = () => {
                 <TabsContent value="generator" className="mt-6">
                   <JobDescriptionGenerator 
                     onGenerate={handleGeneratedDescription}
-                    recruiterName={profile?.full_name}
                     companyName={profile?.company_name || 'Your Company'}
                   />
                 </TabsContent>
