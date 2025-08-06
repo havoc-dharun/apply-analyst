@@ -7,7 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { 
   ArrowLeft, Users, Award, TrendingUp, CheckCircle, 
-  XCircle, AlertTriangle, Download, Mail, Star 
+  XCircle, AlertTriangle, Download, Mail, Star, Bot
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -355,6 +355,19 @@ const EnhancedApplicationResults: React.FC = () => {
                       <div className="space-y-2">
                         <span className="text-sm font-medium">AI Analysis Summary</span>
                         <div className="bg-muted/50 p-3 rounded text-sm">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Bot className="h-4 w-4 text-primary" />
+                            <span className="font-medium text-primary">AI Insights</span>
+                          </div>
+                          <div className="mb-2">
+                            <strong>Match Score:</strong> {selectedApplication.ai_analysis.matchScore}% 
+                            {selectedApplication.ai_analysis.matchScore >= 80 && <span className="text-success ml-1">• Excellent fit!</span>}
+                            {selectedApplication.ai_analysis.matchScore >= 60 && selectedApplication.ai_analysis.matchScore < 80 && <span className="text-warning ml-1">• Good potential</span>}
+                            {selectedApplication.ai_analysis.matchScore < 60 && <span className="text-destructive ml-1">• Needs review</span>}
+                          </div>
+                          <div className="mb-2">
+                            <strong>Key Strengths:</strong> {selectedApplication.ai_analysis.matchedSkills.slice(0, 3).join(', ')}
+                          </div>
                           {selectedApplication.ai_analysis.summary}
                         </div>
                       </div>
