@@ -31,8 +31,7 @@ interface JobDescriptionGeneratorProps {
   companyName: string;
 }
 
-  recruiterName
-const JobDescriptionGenerator: React.FC<JobDescriptionGeneratorProps> = ({ onGenerate, companyName }) => {
+const JobDescriptionGenerator: React.FC<JobDescriptionGeneratorProps> = ({ recruiterName, onGenerate, companyName }) => {
   const { toast } = useToast();
   const [formData, setFormData] = useState<JobDescriptionData>({
     jobTitle: '',
