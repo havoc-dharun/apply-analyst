@@ -53,6 +53,13 @@ export type Database = {
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_applications_job_id"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
         ]
       }
       jobs: {
@@ -60,7 +67,7 @@ export type Database = {
           company: string
           created_at: string
           description: string
-          hr_user_id: string | null
+          hr_user_id: string
           id: string
           location: string | null
           salary: string | null
@@ -72,7 +79,7 @@ export type Database = {
           company: string
           created_at?: string
           description: string
-          hr_user_id?: string | null
+          hr_user_id: string
           id?: string
           location?: string | null
           salary?: string | null
@@ -84,7 +91,7 @@ export type Database = {
           company?: string
           created_at?: string
           description?: string
-          hr_user_id?: string | null
+          hr_user_id?: string
           id?: string
           location?: string | null
           salary?: string | null
