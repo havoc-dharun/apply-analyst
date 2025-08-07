@@ -1,5 +1,4 @@
-const GEMINI_API_KEY = "AIzaSyC8jDvbzZv-HFwlz_lqR_6Ed37PKsDk0Ic";
-const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface GeminiAnalysisResult {
   matchScore: number;
@@ -59,160 +58,43 @@ export const analyzeResumeWithGemini = async (
   jobDescription: string,
   keywords: string[] = []
 ): Promise<GeminiAnalysisResult> => {
-  console.log("Gemini API called with:");
+  console.log("Calling secure Gemini API via Edge Function");
   console.log("Resume text length:", resumeText.length);
   console.log("Job description length:", jobDescription.length);
-  console.log("Keywords:", keywords);
   
-  // Extract keywords from job description if not provided
-  const extractedKeywords = keywords.length > 0 ? keywords : extractKeywordsFromDescription(jobDescription);
-  console.log("Extracted keywords:", extractedKeywords);
-  
-  const keywordsText = extractedKeywords.length > 0 ? `\n\nREQUIRED KEYWORDS FOR ANALYSIS: ${extractedKeywords.join(', ')}` : '';
-  
-  const prompt = `You are an intelligent HR assistant trained to evaluate job applications.
-
-Compare the following candidate's resume with the given job description and provide a detailed analysis.
-
-Resume:
-${resumeText}
-
-Job Description:
-${jobDescription}${keywordsText}
-
-IMPORTANT: Pay special attention to the REQUIRED KEYWORDS listed above. These are the most important skills and technologies for this role.
-
-ANALYSIS INSTRUCTIONS:
-1. FIRST: Extract ALL skills, technologies, and qualifications mentioned in the candidate's resume
-2. SECOND: Compare these extracted skills with the job requirements and keywords
-3. THIRD: Identify which skills match and which are missing
-4. FOURTH: Calculate a realistic match score based on role relevance
-
-ROLE CONTEXT ANALYSIS:
-- If this is an HR/Marketing/Non-technical role, technical skills (programming, coding) should NOT be considered as relevant matches
-- If this is a technical role, HR/Marketing skills should NOT be considered as relevant matches
-- Focus on role-specific skills and experience
-
-Analyze the content and return ONLY a valid JSON response in this exact format:
-{
-  "matchScore": [number from 0 to 100 based on skills match, experience relevance, and keyword presence],
-  "matchedSkills": ["skill1", "skill2", "skill3"],
-  "missingSkills": ["missing1", "missing2", "missing3"],
-  "summary": "2-3 sentence objective summary of candidate fit",
-  "recommendation": "Shortlist for Next Round" | "Consider with Caution" | "Reject"
-}
-
-Scoring Guidelines:
-- 90-100: Perfect match with all required skills and experience
-- 80-89: Strong match with most required skills
-- 70-79: Good match with some gaps in skills
-- 60-69: Moderate match with significant skill gaps
-- 50-59: Weak match, consider with caution
-- Below 50: Poor match, likely reject
-
-ROLE MISMATCH PENALTIES:
-- HR/Marketing role with only technical skills: -40 points
-- Technical role with only HR/Marketing skills: -40 points
-- Missing critical required keywords: -25 points each
-
-SKILL EXTRACTION: Extract skills from the actual resume content, not from predefined lists. Look for:
-- Programming languages, frameworks, tools mentioned in the resume
-- Industry-specific skills (HR, Marketing, Finance, etc.)
-- Certifications, education, and experience areas
-- Technologies and platforms mentioned
-
-Be objective and focus on role-specific qualifications, experience, and skills.`;
-
   try {
-    console.log("Making request to Gemini API...");
-    const requestBody = {
-        contents: [
-          {
-            parts: [
-              {
-                text: prompt,
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.3,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 1024,
-        },
-    };
-    console.log("Request body:", requestBody);
-    
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-    
-    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(requestBody),
-      signal: controller.signal
+    const { data, error } = await supabase.functions.invoke('analyze-resume', {
+      body: {
+        resumeText,
+        jobDescription,
+        keywords
+      }
     });
-    
-    clearTimeout(timeoutId);
 
-    console.log("Gemini API response status:", response.status);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Gemini API error response:", errorText);
-      throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
+    if (error) {
+      console.error("Edge Function error:", error);
+      throw new Error(`Edge Function error: ${error.message}`);
     }
 
-    const data = await response.json();
-    console.log("Gemini API response data:", data);
-    
-    const generatedText = data.candidates[0].content.parts[0].text;
-    console.log("Generated text:", generatedText);
-    
-    // Extract JSON from the response
-    const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      console.error("No JSON found in response:", generatedText);
-      throw new Error("No valid JSON found in Gemini response");
+    if (!data || !data.matchScore) {
+      console.error("Invalid response from Edge Function:", data);
+      throw new Error("Invalid response from Edge Function");
     }
 
-    const result = JSON.parse(jsonMatch[0]);
-    console.log("Parsed result:", result);
-    
-    // Validate the response structure
-    if (!result.matchScore || !result.summary || !result.recommendation) {
-      console.error("Invalid response structure:", result);
-      throw new Error("Invalid response structure from Gemini");
-    }
-
-    return {
-      matchScore: Math.min(100, Math.max(0, result.matchScore)),
-      matchedSkills: result.matchedSkills || [],
-      missingSkills: result.missingSkills || [],
-      summary: result.summary,
-      recommendation: result.recommendation,
-    };
+    return data as GeminiAnalysisResult;
   } catch (error) {
-    console.error("Gemini API Error:", error);
+    console.error("Edge Function Error:", error);
+    console.log("Using fallback analysis due to Edge Function error");
     
-    if (error instanceof Error && error.name === 'AbortError') {
-      console.log("API request timed out, using fallback analysis");
-    } else {
-      console.log("Using fallback analysis due to API error");
-    }
-    
-    // Generate a more dynamic score based on resume content
+    // Generate fallback analysis
     const resumeLower = resumeText.toLowerCase();
     const jobLower = jobDescription.toLowerCase();
     
     // Extract keywords from job description
-    const extractedKeywords = extractKeywordsFromDescription(jobDescription);
+    const extractedKeywords = keywords.length > 0 ? keywords : extractKeywordsFromDescription(jobDescription);
     console.log("Fallback analysis using keywords:", extractedKeywords);
     
-    let score = 0; // Start from 0, not 50
+    let score = 0;
     let matchedSkills: string[] = [];
     let missingSkills: string[] = [];
     
@@ -220,7 +102,7 @@ Be objective and focus on role-specific qualifications, experience, and skills.`
     extractedKeywords.forEach(keyword => {
       const keywordLower = keyword.toLowerCase();
       if (resumeLower.includes(keywordLower)) {
-        score += 10; // Higher points for explicitly required keywords
+        score += 10;
         matchedSkills.push(keyword);
       } else {
         missingSkills.push(keyword);
@@ -288,13 +170,9 @@ Be objective and focus on role-specific qualifications, experience, and skills.`
     extractedKeywords.forEach(keyword => {
       if (!resumeSkills.some(skill => skill.toLowerCase() === keyword.toLowerCase())) {
         missingSkills.push(keyword);
-        score -= 10; // Penalty for missing required keywords
+        score -= 10;
       }
     });
-    
-
-    
-
     
     // Check for experience keywords
     if (resumeLower.includes('senior') || resumeLower.includes('lead') || resumeLower.includes('manager')) {
@@ -325,13 +203,13 @@ Be objective and focus on role-specific qualifications, experience, and skills.`
     
     // Penalize role mismatches
     if (isHRRole && !hasHRSkills) {
-      score = Math.max(0, score - 40); // Heavy penalty for HR role without HR skills
+      score = Math.max(0, score - 40);
     }
     if (isMarketingRole && !hasMarketingSkills) {
-      score = Math.max(0, score - 35); // Penalty for marketing role without marketing skills
+      score = Math.max(0, score - 35);
     }
     if (isCRMRequired && !hasCRMSkills) {
-      score = Math.max(0, score - 25); // Penalty for missing CRM skills
+      score = Math.max(0, score - 25);
     }
     
     // Check for arts/science keywords that would indicate non-tech background
@@ -339,7 +217,7 @@ Be objective and focus on role-specific qualifications, experience, and skills.`
     const hasNonTechBackground = nonTechKeywords.some(keyword => resumeLower.includes(keyword));
     
     if (hasNonTechBackground && !resumeLower.includes('computer') && !resumeLower.includes('software') && !resumeLower.includes('programming')) {
-      score = Math.max(0, score - 30); // Penalize non-tech backgrounds heavily
+      score = Math.max(0, score - 30);
     }
     
     // Cap the score at 100
@@ -356,8 +234,8 @@ Be objective and focus on role-specific qualifications, experience, and skills.`
     
     return {
       matchScore: score,
-      matchedSkills: matchedSkills.slice(0, 5), // Limit to top 5
-      missingSkills: missingSkills.slice(0, 3), // Limit to top 3
+      matchedSkills: matchedSkills.slice(0, 5),
+      missingSkills: missingSkills.slice(0, 3),
       summary: `Candidate shows ${score >= 70 ? 'strong' : score >= 50 ? 'moderate' : 'weak'} alignment with job requirements. ${matchedSkills.length > 0 ? `Strong in: ${matchedSkills.slice(0, 3).join(', ')}.` : ''} ${missingSkills.length > 0 ? `Areas for improvement: ${missingSkills.slice(0, 2).join(', ')}.` : ''}`,
       recommendation
     };
