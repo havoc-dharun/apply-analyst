@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Bot, User, Wand2, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Message {
   id: string;
@@ -47,7 +48,7 @@ const AIRecruitmentAssistant: React.FC<AIRecruitmentAssistantProps> = ({
 
   const addMessage = (type: 'user' | 'assistant', content: string, data?: any) => {
     const newMessage: Message = {
-      id: Date.now().toString(),
+      id: (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`),
       type,
       content,
       timestamp: new Date(),
@@ -58,243 +59,33 @@ const AIRecruitmentAssistant: React.FC<AIRecruitmentAssistantProps> = ({
 
   const generateJobDescription = async (roleTitle: string) => {
     setIsProcessing(true);
-    
     try {
-      // Simulate AI processing with a more sophisticated job description generation
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const jobDescriptions = {
-        'senior software engineer': {
-          description: `## Senior Software Engineer
-
-**Company:** ${companyName || 'Our Company'}
-**Department:** Engineering
-**Employment Type:** Full-Time
-**Experience Required:** 5-8 years
-**Location:** Remote/Hybrid
-
-### Job Summary
-We are seeking a highly skilled Senior Software Engineer to join our dynamic engineering team. This role offers an excellent opportunity to work on cutting-edge technologies and lead technical initiatives that drive our product forward.
-
-### Key Responsibilities
-• Design and develop scalable web applications using modern technologies
-• Lead technical architecture decisions and code reviews
-• Mentor junior developers and contribute to team growth
-• Collaborate with product managers and designers to deliver exceptional user experiences
-• Optimize application performance and ensure high-quality code standards
-• Participate in agile development processes and sprint planning
-
-### Required Skills & Qualifications
-• 5+ years of experience in software development
-• Proficiency in JavaScript, TypeScript, and modern frameworks (React, Vue, or Angular)
-• Strong backend development skills with Node.js, Python, or Java
-• Experience with databases (PostgreSQL, MongoDB, or MySQL)
-• Knowledge of cloud platforms (AWS, Google Cloud, or Azure)
-• Understanding of DevOps practices and CI/CD pipelines
-• Excellent problem-solving and communication skills
-
-### Preferred Qualifications
-• Experience with microservices architecture
-• Knowledge of containerization (Docker, Kubernetes)
-• Familiarity with testing frameworks and TDD practices
-• Open source contributions
-• Leadership or mentoring experience
-
-### Tools & Technologies
-• Git, GitHub/GitLab
-• Docker, Kubernetes
-• AWS/GCP/Azure
-• Jenkins, GitHub Actions
-• Monitoring tools (DataDog, New Relic)
-
-### What We Offer
-• Competitive salary and equity package
-• Comprehensive health, dental, and vision insurance
-• Flexible work arrangements and unlimited PTO
-• Professional development budget
-• State-of-the-art equipment and tools
-
-*Equal Opportunity Employer*`,
-          skills: ['JavaScript', 'TypeScript', 'React', 'Node.js', 'Python', 'PostgreSQL', 'AWS', 'Docker', 'Git', 'Agile', 'Microservices', 'CI/CD']
-        },
-        'marketing manager': {
-          description: `## Marketing Manager
-
-**Company:** ${companyName || 'Our Company'}
-**Department:** Marketing
-**Employment Type:** Full-Time
-**Experience Required:** 3-5 years
-**Location:** Remote/Hybrid
-
-### Job Summary
-We are looking for a creative and data-driven Marketing Manager to develop and execute comprehensive marketing strategies that drive brand awareness, lead generation, and customer engagement.
-
-### Key Responsibilities
-• Develop and implement integrated marketing campaigns across multiple channels
-• Manage social media presence and content marketing initiatives
-• Analyze marketing performance metrics and optimize campaigns for ROI
-• Collaborate with sales team to align marketing efforts with revenue goals
-• Oversee brand messaging and ensure consistent communication
-• Manage marketing budget and vendor relationships
-
-### Required Skills & Qualifications
-• 3+ years of experience in digital marketing or related field
-• Proficiency in marketing automation platforms (HubSpot, Marketo, or Pardot)
-• Strong analytical skills with experience in Google Analytics and marketing metrics
-• Excellent written and verbal communication skills
-• Experience with social media management and content creation
-• Knowledge of SEO/SEM best practices
-• Project management and organizational skills
-
-### Preferred Qualifications
-• Experience with CRM systems (Salesforce, HubSpot)
-• Knowledge of graphic design tools (Adobe Creative Suite, Canva)
-• Experience with email marketing platforms
-• Understanding of conversion rate optimization
-• Previous experience in B2B or SaaS marketing
-
-### Tools & Technologies
-• Google Analytics, Google Ads
-• HubSpot, Salesforce
-• Social media management tools
-• Adobe Creative Suite
-• Email marketing platforms
-
-### What We Offer
-• Competitive salary and performance bonuses
-• Health and wellness benefits
-• Professional development opportunities
-• Creative and collaborative work environment
-• Flexible work arrangements
-
-*Equal Opportunity Employer*`,
-          skills: ['Digital Marketing', 'HubSpot', 'Google Analytics', 'Social Media Management', 'SEO', 'SEM', 'Content Marketing', 'CRM', 'Email Marketing', 'Adobe Creative Suite', 'Project Management', 'Marketing Automation']
-        },
-        'data analyst': {
-          description: `## Data Analyst
-
-**Company:** ${companyName || 'Our Company'}
-**Department:** Data & Analytics
-**Employment Type:** Full-Time
-**Experience Required:** 2-4 years
-**Location:** Remote/Hybrid
-
-### Job Summary
-We are seeking a detail-oriented Data Analyst to join our analytics team. You will be responsible for collecting, processing, and analyzing data to provide actionable insights that drive business decisions.
-
-### Key Responsibilities
-• Collect, clean, and analyze large datasets from multiple sources
-• Create comprehensive reports and dashboards for stakeholders
-• Identify trends, patterns, and anomalies in business data
-• Collaborate with cross-functional teams to understand data requirements
-• Develop and maintain automated reporting processes
-• Present findings and recommendations to management
-
-### Required Skills & Qualifications
-• 2+ years of experience in data analysis or related field
-• Proficiency in SQL for data extraction and manipulation
-• Experience with data visualization tools (Tableau, Power BI, or similar)
-• Strong analytical and problem-solving skills
-• Knowledge of statistical analysis and methods
-• Proficiency in Excel and Google Sheets
-• Excellent communication and presentation skills
-
-### Preferred Qualifications
-• Experience with Python or R for data analysis
-• Knowledge of machine learning concepts
-• Familiarity with cloud data platforms (AWS, GCP, Azure)
-• Experience with ETL processes and data warehousing
-• Background in business intelligence tools
-
-### Tools & Technologies
-• SQL, Python, R
-• Tableau, Power BI
-• Excel, Google Sheets
-• AWS/GCP data services
-• Git for version control
-
-### What We Offer
-• Competitive salary and benefits
-• Opportunities to work with cutting-edge data technologies
-• Professional development and training programs
-• Collaborative and data-driven culture
-• Flexible work environment
-
-*Equal Opportunity Employer*`,
-          skills: ['SQL', 'Python', 'R', 'Tableau', 'Power BI', 'Excel', 'Statistical Analysis', 'Data Visualization', 'ETL', 'Machine Learning', 'AWS', 'Google Analytics', 'Business Intelligence']
-        }
-      };
-
-      const normalizedRole = roleTitle.toLowerCase().trim();
-      let jobData = jobDescriptions[normalizedRole as keyof typeof jobDescriptions];
-
-      if (!jobData) {
-        // Generate a generic job description for unknown roles
-        jobData = {
-          description: `## ${roleTitle}
-
-**Company:** ${companyName || 'Our Company'}
-**Employment Type:** Full-Time
-**Location:** Remote/Hybrid
-
-### Job Summary
-We are seeking a qualified ${roleTitle} to join our growing team. This role offers an excellent opportunity to contribute to our organization's success and advance your career.
-
-### Key Responsibilities
-• Execute role-specific tasks and projects effectively
-• Collaborate with team members to achieve departmental goals
-• Maintain high standards of quality and professionalism
-• Contribute to continuous improvement initiatives
-• Support company objectives and values
-
-### Required Skills & Qualifications
-• Relevant experience in ${roleTitle.toLowerCase()} or related field
-• Strong communication and interpersonal skills
-• Problem-solving and analytical abilities
-• Team collaboration and leadership potential
-• Adaptability and willingness to learn
-
-### What We Offer
-• Competitive compensation package
-• Professional development opportunities
-• Collaborative work environment
-• Growth potential within the organization
-
-*Equal Opportunity Employer*`,
-          skills: ['Communication', 'Problem Solving', 'Team Collaboration', 'Leadership', 'Analytical Skills', 'Project Management']
-        };
-      }
-
-      setCurrentJobData({
-        title: roleTitle,
-        description: jobData.description,
-        skills: jobData.skills
+      const { data, error } = await supabase.functions.invoke('generate-jd', {
+        body: { roleTitle, companyName }
       });
+      if (error) throw error;
 
-      const responseMessage = `Perfect! I've generated a comprehensive job description for **${roleTitle}** at ${companyName || 'your company'}. 
+      const jd = (data as any) ?? {};
+      const title = jd.title || roleTitle;
+      const description = jd.description as string;
+      const skills: string[] = Array.isArray(jd.skills) ? jd.skills : [];
 
-**Key Skills Identified:**
-${jobData.skills.map(skill => `• ${skill}`).join('\n')}
+      if (!description) throw new Error('Invalid response from Gemini');
 
-**What's included in the JD:**
-✅ Detailed job summary and responsibilities
-✅ Required and preferred qualifications  
-✅ Tools and technologies
-✅ Company benefits and culture
+      setCurrentJobData({ title, description, skills });
 
-Would you like me to:
-1. **Apply this JD** to your job posting form
-2. **Modify** any sections or requirements
-3. **Add more specific skills** or qualifications
-4. **Generate a different version** for this role
+      const responseMessage = `Perfect! I've generated a comprehensive job description for **${title}** at ${companyName || 'your company'}. \n\n**Key Skills Identified:**\n${skills.map((s: string) => `• ${s}`).join('\n')}\n\n**What's included in the JD:**\n✅ Detailed job summary and responsibilities\n✅ Required and preferred qualifications  \n✅ Tools and technologies\n✅ Company benefits and culture\n\nWould you like me to:\n1. **Apply this JD** to your job posting form\n2. **Modify** any sections or requirements\n3. **Add more specific skills** or qualifications\n4. **Generate a different version** for this role\n\nOnce you're happy with the JD, you can start receiving and analyzing candidate resumes!`;
 
-Once you're happy with the JD, you can start receiving and analyzing candidate resumes!`;
-
-      addMessage('assistant', responseMessage, { jobData });
+      addMessage('assistant', responseMessage, { jobData: { description, skills } });
       setConversationState('jd_ready');
-
-    } catch (error) {
-      addMessage('assistant', 'I apologize, but I encountered an error while generating the job description. Please try again or provide more details about the role.');
+    } catch (err) {
+      // Fallback JD if Gemini call fails
+      const fallbackDesc = `## ${roleTitle}\n\n**Company:** ${companyName || 'Our Company'}\n**Employment Type:** Full-Time\n**Location:** Remote/Hybrid\n\n### Job Summary\nWe are seeking a qualified ${roleTitle} to join our growing team.\n\n### Key Responsibilities\n• Execute role-specific tasks and projects effectively\n• Collaborate with team members to achieve departmental goals\n• Maintain high standards of quality and professionalism\n\n### Required Skills & Qualifications\n• Communication\n• Problem Solving\n• Team Collaboration\n• Leadership\n\n### What We Offer\n• Competitive compensation package\n• Professional development opportunities\n• Collaborative work environment\n\n*Equal Opportunity Employer*`;
+      const fallbackSkills = ['Communication', 'Problem Solving', 'Team Collaboration', 'Leadership'];
+      setCurrentJobData({ title: roleTitle, description: fallbackDesc, skills: fallbackSkills });
+      addMessage('assistant', `I couldn't reach Gemini right now, so I created a solid starter JD for **${roleTitle}**. You can apply it or ask me to refine it.`, { jobData: { description: fallbackDesc, skills: fallbackSkills } });
+      setConversationState('jd_ready');
+      toast({ title: 'Temporary fallback used', description: 'Gemini API was unreachable. Using a basic JD.', variant: 'destructive' });
     } finally {
       setIsProcessing(false);
     }
