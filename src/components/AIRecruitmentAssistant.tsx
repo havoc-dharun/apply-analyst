@@ -146,10 +146,10 @@ const AIRecruitmentAssistant: React.FC<AIRecruitmentAssistantProps> = ({
       
       <CardContent className="flex-1 flex flex-col p-0">
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto p-2 space-y-2">
           {messages.map((message) => (
-            <div key={message.id} className={`flex gap-3 ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`flex gap-3 max-w-[80%] ${message.type === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+            <div key={message.id} className={`flex gap-2 ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div className={`flex gap-2 max-w-[80%] ${message.type === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                   message.type === 'user' 
                     ? 'bg-primary text-primary-foreground' 
@@ -157,7 +157,7 @@ const AIRecruitmentAssistant: React.FC<AIRecruitmentAssistantProps> = ({
                 }`}>
                   {message.type === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                 </div>
-                <div className={`rounded-lg p-3 ${
+                <div className={`rounded-lg p-2 ${
                   message.type === 'user' 
                     ? 'bg-primary text-primary-foreground' 
                     : 'bg-muted'
@@ -181,11 +181,11 @@ const AIRecruitmentAssistant: React.FC<AIRecruitmentAssistantProps> = ({
           ))}
           
           {isProcessing && (
-            <div className="flex gap-3 justify-start">
+            <div className="flex gap-2 justify-start">
               <div className="w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center">
                 <Bot className="w-4 h-4" />
               </div>
-              <div className="bg-muted rounded-lg p-3">
+              <div className="bg-muted rounded-lg p-2">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
                   <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>

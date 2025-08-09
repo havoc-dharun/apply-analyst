@@ -351,20 +351,6 @@ const CandidateApplication = () => {
                 </div>
               </div>
 
-              <div className="bg-muted/30 rounded-lg p-4">
-                <h4 className="font-medium mb-2">What happens next?</h4>
-                <ul className="text-sm text-muted-foreground space-y-1">
-                  <li>• Your resume will be analyzed by our AI system</li>
-                  <li>• We'll match your skills with the job requirements</li>
-                  <li>• HR team will review the analysis and contact qualified candidates</li>
-                  <li>• You'll receive feedback within 2-3 business days</li>
-                </ul>
-                <div className="mt-3 p-2 bg-primary/10 rounded border border-primary/20">
-                  <p className="text-xs text-primary-foreground">
-                    💡 <strong>Testing Tip:</strong> You can download a sample resume from <a href="/sample-resume.txt" download className="underline">here</a> to test the AI analysis functionality.
-                  </p>
-                </div>
-              </div>
 
               <Button
                 onClick={handleSubmit}
