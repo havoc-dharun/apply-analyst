@@ -264,14 +264,7 @@ const HRDashboard = () => {
             </div>
             <div className="flex items-center gap-4">
               <div className="hidden md:block">
-                <div className="w-32 h-20 bg-gradient-to-br from-blue-500/20 to-purple-600/20 rounded-lg flex items-center justify-center shadow-lg">
-                  <div className="text-center">
-                    <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-1">
-                      <Users className="w-4 h-4 text-primary" />
-                    </div>
-                    <p className="text-xs text-primary-foreground">AI-Powered HR</p>
-                  </div>
-                </div>
+                
               </div>
               <Button variant="outline" onClick={handleSignOut} className="bg-transparent border-white/20 text-white hover:bg-white/10">
                 <LogOut className="w-4 h-4 mr-2" />
