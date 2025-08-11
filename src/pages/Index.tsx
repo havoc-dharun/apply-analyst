@@ -3,12 +3,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Briefcase, Users, Zap, ArrowRight, Brain, FileSearch, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ModernNavigation } from "@/components/ModernNavigation";
-
 const Index = () => {
   const navigate = useNavigate();
-
-  return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+  return <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Floating Background Elements */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-20 left-10 w-32 h-32 bg-primary/5 rounded-full blur-xl"></div>
@@ -40,25 +37,12 @@ const Index = () => {
             We integrate AI-powered resume analysis into your hiring process, automatically evaluating candidates with precision and speed.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              onClick={() => navigate("/auth")} 
-              variant="hero" 
-              size="lg"
-              className="bg-primary-foreground text-primary hover:bg-primary-foreground/90"
-            >
+            <Button onClick={() => navigate("/auth")} variant="hero" size="lg" className="bg-primary-foreground text-primary hover:bg-primary-foreground/90">
               <Briefcase className="w-5 h-5 mr-2" />
               HR Login
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
-            <Button 
-              onClick={() => navigate("/auth")} 
-              variant="outline" 
-              size="lg"
-              className="border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10"
-            >
-              <Users className="w-5 h-5 mr-2" />
-              Get Started
-            </Button>
+            
           </div>
         </div>
       </div>
@@ -203,12 +187,7 @@ const Index = () => {
                   </div>
                 </div>
               </div>
-              <Button 
-                onClick={() => navigate("/auth")} 
-                variant="hero" 
-                size="lg" 
-                className="w-full"
-              >
+              <Button onClick={() => navigate("/auth")} variant="hero" size="lg" className="w-full">
                 <Briefcase className="w-5 h-5 mr-2" />
                 Start Using HR Dashboard
               </Button>
@@ -221,8 +200,6 @@ const Index = () => {
           </Card>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
