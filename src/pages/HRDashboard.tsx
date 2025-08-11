@@ -305,7 +305,7 @@ const HRDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-muted-foreground text-sm">Total Applicants</p>
-                  <p className="text-3xl font-bold text-success">{jobs.reduce((sum, job) => sum + job.applicants, 0)}</p>
+                  <p className="text-3xl font-bold text-slate-950">{jobs.reduce((sum, job) => sum + job.applicants, 0)}</p>
                   <p className="text-xs text-muted-foreground mt-1">Across all jobs</p>
                 </div>
                 <div className="w-12 h-12 bg-success/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -320,7 +320,7 @@ const HRDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-muted-foreground text-sm">Success Rate</p>
-                  <p className="text-3xl font-bold text-warning">87%</p>
+                  <p className="text-3xl font-bold text-slate-950">87%</p>
                   <p className="text-xs text-muted-foreground mt-1">AI accuracy</p>
                 </div>
                 <div className="w-12 h-12 bg-warning/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
