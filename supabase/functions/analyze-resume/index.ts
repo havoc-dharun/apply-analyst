@@ -148,7 +148,7 @@ Be objective and focus on role-specific qualifications, experience, and skills.`
       throw new Error("No valid JSON found in Gemini response");
     }
 
-    const result = JSON.parse(jsonMatch[0]);
+        const result = JSON.parse(jsonMatch[0]);
     
     // Validate the response structure
     if (typeof result.matchScore !== 'number' || !result.summary || !result.recommendation) {
@@ -156,14 +156,28 @@ Be objective and focus on role-specific qualifications, experience, and skills.`
       throw new Error("Invalid response structure from Gemini");
     }
 
+    // Normalize skills strictly against JD keywords to avoid generic matches like Git leaking in
+    const jdKeywords = extractKeywordsFromDescription(jobDescription).map((k) => k.toLowerCase());
+    const jdSet = new Set(jdKeywords);
+
+    const toLowerArray = (arr: any) => Array.isArray(arr) ? arr.map((s) => String(s).toLowerCase()) : [];
+    const uniq = (arr: string[]) => Array.from(new Set(arr));
+    const toTitle = (s: string) => s.length ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+
+    const rawMatched = toLowerArray(result.matchedSkills).filter((s) => jdSet.has(s));
+    const rawMissing = toLowerArray(result.missingSkills).filter((s) => jdSet.has(s) && !rawMatched.includes(s));
+
+    const matchedSkills = uniq(rawMatched).map(toTitle).slice(0, 5);
+    const missingSkills = uniq(rawMissing).map(toTitle).slice(0, 3);
+    
     const analysisResult: GeminiAnalysisResult = {
       matchScore: Math.min(100, Math.max(0, result.matchScore)),
-      matchedSkills: result.matchedSkills || [],
-      missingSkills: result.missingSkills || [],
+      matchedSkills,
+      missingSkills,
       summary: result.summary,
       recommendation: result.recommendation,
     };
-
+    
     return new Response(
       JSON.stringify(analysisResult),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

@@ -98,13 +98,16 @@ export const analyzeResumeWithGemini = async (
     let matchedSkills: string[] = [];
     let missingSkills: string[] = [];
     
-    // Check extracted keywords first (highest priority)
+    // Normalize against JD keywords only
+    const jdSet = new Set(extractedKeywords.map(k => k.toLowerCase()));
+
+    // Check extracted keywords first (highest priority) but only accept JD keywords
     extractedKeywords.forEach(keyword => {
       const keywordLower = keyword.toLowerCase();
-      if (resumeLower.includes(keywordLower)) {
+      if (jdSet.has(keywordLower) && resumeLower.includes(keywordLower)) {
         score += 10;
         matchedSkills.push(keyword);
-      } else {
+      } else if (jdSet.has(keywordLower)) {
         missingSkills.push(keyword);
       }
     });
@@ -158,17 +161,17 @@ export const analyzeResumeWithGemini = async (
       }
     });
     
-    // Now compare resume skills with job requirements
+    // Now compare resume skills with job requirements but only count if skill is a JD keyword
     resumeSkills.forEach(skill => {
-      if (jobLower.includes(skill.toLowerCase()) || extractedKeywords.some(k => k.toLowerCase() === skill.toLowerCase())) {
+      if (jdSet.has(skill.toLowerCase())) {
         score += 8;
         matchedSkills.push(skill);
       }
     });
     
-    // Check for missing required skills
+    // Check for missing required skills (only JD keywords)
     extractedKeywords.forEach(keyword => {
-      if (!resumeSkills.some(skill => skill.toLowerCase() === keyword.toLowerCase())) {
+      if (jdSet.has(keyword.toLowerCase()) && !resumeSkills.some(skill => skill.toLowerCase() === keyword.toLowerCase())) {
         missingSkills.push(keyword);
         score -= 10;
       }
