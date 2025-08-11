@@ -253,8 +253,8 @@ const HRDashboard = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="relative">
-                <Briefcase className="w-10 h-10" />
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full animate-pulse"></div>
+                <Briefcase className="w-10 h-10 mx-[23px] px-0" />
+                
               </div>
               <div>
                 <h1 className="text-4xl font-bold">Talent Genie</h1>
