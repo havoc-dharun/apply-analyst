@@ -434,9 +434,7 @@ const HRDashboard = () => {
                             <Eye className="w-4 h-4 mr-1" />
                             View Form
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => window.open(`/results/${job.id}`, '_blank')}>
-                            View Results
-                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => window.open(`/results/${job.id}`, '_blank')}>Results </Button>
                         </div>
                       </div>
                     </div>)}
