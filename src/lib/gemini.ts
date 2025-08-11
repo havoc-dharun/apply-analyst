@@ -76,7 +76,7 @@ export const analyzeResumeWithGemini = async (
       throw new Error(`Edge Function error: ${error.message}`);
     }
 
-    if (!data || !data.matchScore) {
+    if (!data || typeof (data as any).matchScore !== 'number') {
       console.error("Invalid response from Edge Function:", data);
       throw new Error("Invalid response from Edge Function");
     }

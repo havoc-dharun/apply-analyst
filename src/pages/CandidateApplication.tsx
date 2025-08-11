@@ -72,6 +72,7 @@ const CandidateApplication = () => {
   const { jobId } = useParams();
   const navigate = useNavigate();
   const [jobData, setJobData] = useState<any>(null);
+  const [isLoadingJob, setIsLoadingJob] = useState(true);
   const [applicationData, setApplicationData] = useState({
     name: "",
     email: "",
@@ -108,6 +109,7 @@ const CandidateApplication = () => {
     if (!jobId) return;
 
     try {
+      setIsLoadingJob(true);
       console.log("Loading job data for ID:", jobId);
       const { data, error } = await supabase
         .from('jobs')
@@ -125,6 +127,8 @@ const CandidateApplication = () => {
     } catch (error) {
       console.error('Error loading job:', error);
       setJobData(null);
+    } finally {
+      setIsLoadingJob(false);
     }
   };
 
@@ -232,6 +236,20 @@ const CandidateApplication = () => {
       setIsSubmitting(false);
     }
   };
+
+  if (isLoadingJob) {
+    return (
+      <div className="min-h-screen bg-gradient-card flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-8 text-center">
+            <div className="w-8 h-8 mx-auto mb-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+            <h2 className="text-xl font-semibold mb-2">Loading job...</h2>
+            <p className="text-muted-foreground mb-4">Please wait while we fetch the job details.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (!jobData) {
     return (
