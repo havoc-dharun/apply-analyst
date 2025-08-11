@@ -148,22 +148,36 @@ Be objective and focus on role-specific qualifications, experience, and skills.`
       throw new Error("No valid JSON found in Gemini response");
     }
 
-    const result = JSON.parse(jsonMatch[0]);
+        const result = JSON.parse(jsonMatch[0]);
     
     // Validate the response structure
-    if (!result.matchScore || !result.summary || !result.recommendation) {
+    if (typeof result.matchScore !== 'number' || !result.summary || !result.recommendation) {
       console.error("Invalid response structure:", result);
       throw new Error("Invalid response structure from Gemini");
     }
 
+    // Normalize skills strictly against JD keywords to avoid generic matches like Git leaking in
+    const jdKeywords = extractKeywordsFromDescription(jobDescription).map((k) => k.toLowerCase());
+    const jdSet = new Set(jdKeywords);
+
+    const toLowerArray = (arr: any) => Array.isArray(arr) ? arr.map((s) => String(s).toLowerCase()) : [];
+    const uniq = (arr: string[]) => Array.from(new Set(arr));
+    const toTitle = (s: string) => s.length ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+
+    const rawMatched = toLowerArray(result.matchedSkills).filter((s) => jdSet.has(s));
+    const rawMissing = toLowerArray(result.missingSkills).filter((s) => jdSet.has(s) && !rawMatched.includes(s));
+
+    const matchedSkills = uniq(rawMatched).map(toTitle).slice(0, 5);
+    const missingSkills = uniq(rawMissing).map(toTitle).slice(0, 3);
+    
     const analysisResult: GeminiAnalysisResult = {
       matchScore: Math.min(100, Math.max(0, result.matchScore)),
-      matchedSkills: result.matchedSkills || [],
-      missingSkills: result.missingSkills || [],
+      matchedSkills,
+      missingSkills,
       summary: result.summary,
       recommendation: result.recommendation,
     };
-
+    
     return new Response(
       JSON.stringify(analysisResult),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -219,45 +233,67 @@ function extractKeywordsFromDescription(description: string): string[] {
 function generateFallbackAnalysis(resumeText: string, jobDescription: string): GeminiAnalysisResult {
   const resumeLower = resumeText.toLowerCase();
   const jobLower = jobDescription.toLowerCase();
-  
-  let score = 50; // Base score
-  const matchedSkills: string[] = [];
-  const missingSkills: string[] = [];
-  
-  // Basic keyword matching
-  const extractedKeywords = extractKeywordsFromDescription(jobDescription);
-  
-  extractedKeywords.forEach(keyword => {
-    if (resumeLower.includes(keyword.toLowerCase())) {
-      score += 10;
-      matchedSkills.push(keyword);
-    } else {
-      score -= 5;
-      missingSkills.push(keyword);
-    }
-  });
-  
-  // Experience check
-  if (resumeLower.includes('senior') || resumeLower.includes('lead')) {
-    score += 10;
+
+  // Extract JD keywords and resume skills
+  const jdKeywords = extractKeywordsFromDescription(jobDescription).map(k => k.toLowerCase());
+  const resumeTerms = new Set<string>();
+
+  const knownTerms = [
+    'javascript','typescript','react','node.js','python','java','c++','c#','php','ruby','go','rust','vue','angular','express','django','flask','spring','laravel','next.js','nuxt.js','mysql','postgresql','mongodb','redis','sqlite','oracle','sql','aws','azure','gcp','google cloud','amazon web services','git','docker','kubernetes','jenkins','ci/cd','agile','scrum',
+    'human resources','hr','recruitment','hiring','talent acquisition','employee relations','performance management','hr policies','compensation','benefits','training','development',
+    'marketing','advertising','branding','social media','content creation','campaign management','digital marketing','seo','sem','email marketing','crm','customer relationship','salesforce','hubspot','pipedrive','lead management','customer service'
+  ];
+  for (const term of knownTerms) {
+    if (resumeLower.includes(term)) resumeTerms.add(term);
   }
-  
+
+  // JD coverage (recall): how much of the JD the CV covers
+  const jdCovered = jdKeywords.filter(k => resumeLower.includes(k)).length;
+  const recall = jdKeywords.length > 0 ? jdCovered / jdKeywords.length : 0;
+
+  // CV relevance (precision): how much of the CV’s detected skills are relevant to the JD
+  const resumeSkillList = Array.from(resumeTerms);
+  const relevantInCv = resumeSkillList.filter(s => jdKeywords.includes(s)).length;
+  const precision = resumeSkillList.length > 0 ? relevantInCv / resumeSkillList.length : (jdKeywords.length > 0 ? 0 : 1);
+
+  // F1-like score to balance precision and recall
+  const f1 = (precision + recall) > 0 ? (2 * precision * recall) / (precision + recall) : 0;
+
+  // Base score from F1
+  let score = Math.round(f1 * 100);
+
+  // Role mismatch penalties
+  const isHRRole = ['human resources','hr','recruitment','hiring','talent acquisition','employee relations','performance management'].some(k => jobLower.includes(k));
+  const isMarketingRole = ['marketing','advertising','branding','social media','content creation','campaign management','digital marketing','seo','sem','email marketing'].some(k => jobLower.includes(k));
+  const isTechnicalRole = ['javascript','typescript','react','node.js','python','java','c++','c#','php','ruby','go','rust'].some(k => jobLower.includes(k));
+
+  const hasHR = ['human resources','hr','recruitment','hiring','talent acquisition','employee relations','performance management'].some(k => resumeLower.includes(k));
+  const hasMarketing = ['marketing','advertising','branding','social media','content creation','campaign management','digital marketing','seo','sem','email marketing'].some(k => resumeLower.includes(k));
+  const hasTech = ['javascript','typescript','react','node.js','python','java','c++','c#','php','ruby','go','rust'].some(k => resumeLower.includes(k));
+
+  if (isTechnicalRole && !hasTech) score = Math.max(0, score - 35);
+  if ((isHRRole || isMarketingRole) && hasTech && !hasHR && !hasMarketing) score = Math.max(0, score - 25);
+
+  // Experience nudges
+  if (resumeLower.includes('senior') || resumeLower.includes('lead') || resumeLower.includes('manager')) score += 5;
+  if (resumeLower.match(/\b(5\+?\s*years|5\s*years|6\s*years|7\s*years)\b/)) score += 3;
+
   score = Math.min(100, Math.max(0, score));
-  
+
+  // Matched/missing skills lists from JD perspective
+  const matchedSkills = jdKeywords.filter(k => resumeLower.includes(k)).slice(0, 5).map(k => k[0].toUpperCase() + k.slice(1));
+  const missingSkills = jdKeywords.filter(k => !resumeLower.includes(k)).slice(0, 3).map(k => k[0].toUpperCase() + k.slice(1));
+
   let recommendation: "Shortlist for Next Round" | "Consider with Caution" | "Reject";
-  if (score >= 75) {
-    recommendation = "Shortlist for Next Round";
-  } else if (score >= 50) {
-    recommendation = "Consider with Caution";
-  } else {
-    recommendation = "Reject";
-  }
-  
+  if (score >= 75) recommendation = "Shortlist for Next Round";
+  else if (score >= 50) recommendation = "Consider with Caution";
+  else recommendation = "Reject";
+
   return {
     matchScore: score,
-    matchedSkills: matchedSkills.slice(0, 5),
-    missingSkills: missingSkills.slice(0, 3),
-    summary: `Fallback analysis shows ${score >= 70 ? 'good' : 'moderate'} potential match with job requirements.`,
+    matchedSkills,
+    missingSkills,
+    summary: `Fallback analysis balances JD coverage and CV relevance. Precision: ${Math.round(precision*100)}%, Recall: ${Math.round(recall*100)}%, F1: ${Math.round(f1*100)}%.`,
     recommendation
   };
 }
