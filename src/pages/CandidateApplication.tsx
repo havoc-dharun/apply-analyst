@@ -128,10 +128,15 @@ const CandidateApplication = () => {
       // Process with AI
       console.log("Analyzing with Gemini API...");
       
-      const aiResult = await processResumeWithAI(resumeText, jobData?.description || "");
-      console.log("AI analysis complete:", aiResult);
+      let aiResult: any = null;
+      try {
+        aiResult = await processResumeWithAI(resumeText, jobData?.description || "");
+        console.log("AI analysis complete:", aiResult);
+      } catch (e) {
+        console.error("AI analysis failed; proceeding without analysis:", e);
+      }
 
-      // Store application in database
+      // Store application in database regardless of AI analysis
       console.log("Saving to database...");
       const applicationPayload = {
         job_id: jobId,
@@ -139,7 +144,7 @@ const CandidateApplication = () => {
         email: applicationData.email,
         resume_file_name: applicationData.resume.name,
         resume_text: resumeText,
-        ai_analysis: aiResult as any
+        ai_analysis: aiResult
       };
       console.log("Application payload:", applicationPayload);
       
