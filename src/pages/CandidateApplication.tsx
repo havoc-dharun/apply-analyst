@@ -9,14 +9,69 @@ import { Upload, FileText, Send, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { analyzeResumeWithGemini, extractTextFromFile } from "@/lib/gemini";
 
-
+// Helper function to extract keywords from job description (copied from gemini.ts)
+const extractKeywordsFromDescription = (description: string): string[] => {
+  const descriptionLower = description.toLowerCase();
+  const keywords: string[] = [];
+  
+  // Common programming languages
+  const languages = ['javascript', 'react', 'node.js', 'python', 'java', 'c++', 'c#', 'php', 'ruby', 'go', 'rust', 'typescript'];
+  languages.forEach(lang => {
+    if (descriptionLower.includes(lang)) {
+      keywords.push(lang.charAt(0).toUpperCase() + lang.slice(1));
+    }
+  });
+  
+  // Frameworks and libraries
+  const frameworks = ['react', 'vue', 'angular', 'express', 'django', 'flask', 'spring', 'laravel', 'next.js', 'nuxt.js'];
+  frameworks.forEach(framework => {
+    if (descriptionLower.includes(framework)) {
+      keywords.push(framework.charAt(0).toUpperCase() + framework.slice(1));
+    }
+  });
+  
+  // Databases
+  const databases = ['mysql', 'postgresql', 'mongodb', 'redis', 'sqlite', 'oracle', 'sql'];
+  databases.forEach(db => {
+    if (descriptionLower.includes(db)) {
+      keywords.push(db.charAt(0).toUpperCase() + db.slice(1));
+    }
+  });
+  
+  // Cloud platforms
+  const clouds = ['aws', 'azure', 'gcp', 'google cloud', 'amazon web services'];
+  clouds.forEach(cloud => {
+    if (descriptionLower.includes(cloud)) {
+      keywords.push(cloud.toUpperCase());
+    }
+  });
+  
+  // Development tools
+  const tools = ['git', 'docker', 'kubernetes', 'jenkins', 'ci/cd', 'agile', 'scrum'];
+  tools.forEach(tool => {
+    if (descriptionLower.includes(tool)) {
+      keywords.push(tool.charAt(0).toUpperCase() + tool.slice(1));
+    }
+  });
+  
+  // Check for "Required Keywords" section in description
+  const requiredKeywordsMatch = description.match(/Required Keywords:\s*([^.\n]+)/i);
+  if (requiredKeywordsMatch) {
+    const requiredKeywords = requiredKeywordsMatch[1]
+      .split(',')
+      .map(keyword => keyword.trim())
+      .filter(keyword => keyword.length > 0);
+    keywords.push(...requiredKeywords);
+  }
+  
+  return [...new Set(keywords)]; // Remove duplicates
+};
 import { supabase } from "@/integrations/supabase/client";
 
 const CandidateApplication = () => {
   const { jobId } = useParams();
   const navigate = useNavigate();
   const [jobData, setJobData] = useState<any>(null);
-  const [isLoadingJob, setIsLoadingJob] = useState(true);
   const [applicationData, setApplicationData] = useState({
     name: "",
     email: "",
@@ -53,7 +108,6 @@ const CandidateApplication = () => {
     if (!jobId) return;
 
     try {
-      setIsLoadingJob(true);
       console.log("Loading job data for ID:", jobId);
       const { data, error } = await supabase
         .from('jobs')
@@ -71,8 +125,6 @@ const CandidateApplication = () => {
     } catch (error) {
       console.error('Error loading job:', error);
       setJobData(null);
-    } finally {
-      setIsLoadingJob(false);
     }
   };
 
@@ -98,8 +150,8 @@ const CandidateApplication = () => {
     }
   };
 
-  const processResumeWithAI = async (resumeText: string, jobDescription: string) => {
-    return await analyzeResumeWithGemini(resumeText, jobDescription);
+  const processResumeWithAI = async (resumeText: string, jobDescription: string, keywords: string[]) => {
+    return await analyzeResumeWithGemini(resumeText, jobDescription, keywords);
   };
 
   const handleSubmit = async () => {
@@ -128,15 +180,14 @@ const CandidateApplication = () => {
       // Process with AI
       console.log("Analyzing with Gemini API...");
       
-      let aiResult: any = null;
-      try {
-        aiResult = await processResumeWithAI(resumeText, jobData?.description || "");
-        console.log("AI analysis complete:", aiResult);
-      } catch (e) {
-        console.error("AI analysis failed; proceeding without analysis:", e);
-      }
+      // Extract keywords from job description
+      const extractedKeywords = extractKeywordsFromDescription(jobData?.description || "");
+      console.log("Extracted keywords for analysis:", extractedKeywords);
+      
+      const aiResult = await processResumeWithAI(resumeText, jobData?.description || "", extractedKeywords);
+      console.log("AI analysis complete:", aiResult);
 
-      // Store application in database regardless of AI analysis
+      // Store application in database
       console.log("Saving to database...");
       const applicationPayload = {
         job_id: jobId,
@@ -144,7 +195,7 @@ const CandidateApplication = () => {
         email: applicationData.email,
         resume_file_name: applicationData.resume.name,
         resume_text: resumeText,
-        ai_analysis: aiResult
+        ai_analysis: aiResult as any
       };
       console.log("Application payload:", applicationPayload);
       
@@ -181,20 +232,6 @@ const CandidateApplication = () => {
       setIsSubmitting(false);
     }
   };
-
-  if (isLoadingJob) {
-    return (
-      <div className="min-h-screen bg-gradient-card flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="p-8 text-center">
-            <div className="w-8 h-8 mx-auto mb-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-            <h2 className="text-xl font-semibold mb-2">Loading job...</h2>
-            <p className="text-muted-foreground mb-4">Please wait while we fetch the job details.</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   if (!jobData) {
     return (
