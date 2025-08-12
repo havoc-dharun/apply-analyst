@@ -99,9 +99,8 @@ const ApplicationResults = () => {
     }
   };
 
-  const appsWithScores = applications.filter(app => (app.ai_analysis as any) && typeof (app.ai_analysis as any).matchScore === 'number');
-  const averageScore = appsWithScores.length > 0 
-    ? Math.round(appsWithScores.reduce((sum, app) => sum + (app.ai_analysis as any).matchScore, 0) / appsWithScores.length)
+  const averageScore = applications.length > 0 
+    ? Math.round(applications.reduce((sum, app) => sum + app.ai_analysis.matchScore, 0) / applications.length)
     : 0;
 
   const shortlistedCount = applications.filter(app => app.ai_analysis.recommendation === "Shortlist for Next Round").length;
@@ -195,7 +194,6 @@ const ApplicationResults = () => {
                     </TableHeader>
                     <TableBody>
                       {applications
-                        .filter(app => (app.ai_analysis as any) && typeof (app.ai_analysis as any).matchScore === 'number')
                         .sort((a, b) => (b.ai_analysis as any).matchScore - (a.ai_analysis as any).matchScore)
                         .map((app) => (
                           <TableRow key={app.id}>

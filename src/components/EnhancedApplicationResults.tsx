@@ -376,11 +376,7 @@ const EnhancedApplicationResults: React.FC = () => {
 
                       {/* Action Buttons */}
                       <div className="space-y-2">
-                        <Button className="w-full" size="sm" onClick={() => {
-                          const subject = encodeURIComponent(`Regarding your application for ${jobData.title}`);
-                          const body = encodeURIComponent(`Hi ${selectedApplication.name},\n\nThank you for applying for ${jobData.title} at ${jobData.company}.\n\nBest regards,\nHR Team`);
-                          window.location.href = `mailto:${selectedApplication.email}?subject=${subject}&body=${body}`;
-                        }}>
+                        <Button className="w-full" size="sm">
                           <Mail className="mr-2 h-4 w-4" />
                           Send Email
                         </Button>
