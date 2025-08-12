@@ -31,9 +31,9 @@ const Index = () => {
               <Brain className="w-12 h-12" />
               <div className="absolute -top-1 -right-1 w-4 h-4 bg-accent rounded-full animate-pulse"></div>
             </div>
-            <h1 className="text-center font-bold text-3xl">The Future of Smart Recruitment Technology is here</h1>
+            <h1 className="text-5xl font-bold">The Future of Smart Recruitment Technology is here.</h1>
           </div>
-          <p className="text-primary-foreground/90 mb-8 max-w-2xl mx-auto text-lg">
+          <p className="text-xl text-primary-foreground/90 mb-8 max-w-2xl mx-auto">
             We integrate AI-powered resume analysis into your hiring process, automatically evaluating candidates with precision and speed.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -68,7 +68,14 @@ const Index = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="text-center">
-              
+              <div className="w-full h-32 bg-gradient-to-br from-blue-500/20 to-indigo-600/20 rounded-lg flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <Briefcase className="w-6 h-6 text-primary" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">AI-Powered Job Posting</p>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
@@ -85,8 +92,8 @@ const Index = () => {
             <CardContent className="text-center">
               <div className="w-full h-32 bg-gradient-to-br from-purple-500/20 to-pink-600/20 rounded-lg flex items-center justify-center">
                 <div className="text-center">
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2 bg-zinc-400">
-                    <FileSearch className="w-6 h-6 text-accent rounded-2xl" />
+                  <div className="w-12 h-12 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <FileSearch className="w-6 h-6 text-accent" />
                   </div>
                   <p className="text-xs text-muted-foreground">AI-Powered Analysis</p>
                 </div>
