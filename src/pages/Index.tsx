@@ -28,12 +28,14 @@ const Index = () => {
         <div className="container mx-auto px-4 text-center relative z-10">
           <div className="flex items-center justify-center gap-3 mb-6">
             <div className="relative">
-              <Brain className="w-12 h-12 mx-0" />
+              <Brain className="w-12 h-12" />
               <div className="absolute -top-1 -right-1 w-4 h-4 bg-accent rounded-full animate-pulse"></div>
             </div>
             <h1 className="text-center font-bold text-3xl">The Future of Smart Recruitment Technology is here</h1>
           </div>
-          <p className="text-primary-foreground/90 mb-8 max-w-2xl mx-auto text-base">We integrate AI-powered resume analysis into your hiring process, automatically evaluating candidates with precision and speed</p>
+          <p className="text-primary-foreground/90 mb-8 max-w-2xl mx-auto text-lg">
+            We integrate AI-powered resume analysis into your hiring process, automatically evaluating candidates with precision and speed.
+          </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button onClick={() => navigate("/auth")} variant="hero" size="lg" className="bg-primary-foreground text-primary hover:bg-primary-foreground/90">
               <Briefcase className="w-5 h-5 mr-2" />

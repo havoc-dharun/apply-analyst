@@ -253,8 +253,8 @@ const HRDashboard = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="relative">
-                <Briefcase className="w-10 h-10 mx-[23px] px-0" />
-                
+                <Briefcase className="w-10 h-10" />
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full animate-pulse"></div>
               </div>
               <div>
                 <h1 className="text-4xl font-bold">Talent Genie</h1>
@@ -264,7 +264,14 @@ const HRDashboard = () => {
             </div>
             <div className="flex items-center gap-4">
               <div className="hidden md:block">
-                
+                <div className="w-32 h-20 bg-gradient-to-br from-blue-500/20 to-purple-600/20 rounded-lg flex items-center justify-center shadow-lg">
+                  <div className="text-center">
+                    <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-1">
+                      <Users className="w-4 h-4 text-primary" />
+                    </div>
+                    <p className="text-xs text-primary-foreground">AI-Powered HR</p>
+                  </div>
+                </div>
               </div>
               <Button variant="outline" onClick={handleSignOut} className="bg-transparent border-white/20 text-white hover:bg-white/10">
                 <LogOut className="w-4 h-4 mr-2" />
@@ -298,7 +305,7 @@ const HRDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-muted-foreground text-sm">Total Applicants</p>
-                  <p className="text-3xl font-bold text-slate-950">{jobs.reduce((sum, job) => sum + job.applicants, 0)}</p>
+                  <p className="text-3xl font-bold text-success">{jobs.reduce((sum, job) => sum + job.applicants, 0)}</p>
                   <p className="text-xs text-muted-foreground mt-1">Across all jobs</p>
                 </div>
                 <div className="w-12 h-12 bg-success/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -313,7 +320,7 @@ const HRDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-muted-foreground text-sm">Success Rate</p>
-                  <p className="text-3xl font-bold text-slate-950">87%</p>
+                  <p className="text-3xl font-bold text-warning">87%</p>
                   <p className="text-xs text-muted-foreground mt-1">AI accuracy</p>
                 </div>
                 <div className="w-12 h-12 bg-warning/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -427,7 +434,9 @@ const HRDashboard = () => {
                             <Eye className="w-4 h-4 mr-1" />
                             View Form
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => window.open(`/results/${job.id}`, '_blank')}>Results </Button>
+                          <Button variant="ghost" size="sm" onClick={() => window.open(`/results/${job.id}`, '_blank')}>
+                            View Results
+                          </Button>
                         </div>
                       </div>
                     </div>)}
